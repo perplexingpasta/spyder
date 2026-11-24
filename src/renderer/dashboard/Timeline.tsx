@@ -1,11 +1,11 @@
-// Day timeline, one track (P55, P64): blocks by whether they're accounted for, breaks and away muted, untracked hatched,
-// a thin activity-category strip under it, distraction flags above. Hover shows details; clicking a
+// Day timeline, two tracks (P55, P64, P77): blocks by whether they're accounted for, breaks and away muted, untracked hatched,
+// the app track under it (P77: each app or site its own colour, every switch shown), distraction flags above. Hover shows details; clicking a
 // session picks it (Today highlights its row in the session log).
-import { useId, useLayoutEffect, useRef, useState } from 'react';
-import type { DaySummary } from '../../core/aggregate';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { appRuns, type DaySummary } from '../../core/aggregate';
 import { fmtDuration, fmtTime } from '../../core/format';
 import { TAG_LABEL, type Tag } from '../../core/types';
-import { CAT_COLOR, CAT_LABEL } from './parts';
+import { CAT_LABEL } from './parts';
 
 export const AWAY_LABEL: Record<string, string> = {
   break: 'Break',
@@ -57,6 +57,33 @@ export const answerText = (x: { kind: string; tag?: Tag; name: string | null }) 
 /** The block's own answer text, for editing: a break stored as just "Break" has none (P66). */
 export const ownAnswer = (x: { kind: string; name: string | null }) => (x.kind === 'break' && x.name === 'Break' ? null : x.name);
 
+/** An app's colour on the app track: the user's pick (P79), else its fixed automatic slot (P77). */
+const appColor = (picked: Record<string, string>, key: string, slot: number) => picked[key] ?? `var(--color-app-${slot + 1})`;
+/** Dark ink reads on every automatic colour in both themes; a picked colour gets dark or light ink by its lightness. */
+function inkFor(color: string): string {
+  const m = /^#(..)(..)(..)$/.exec(color);
+  if (!m) return '#111114';
+  const [r, g, b] = m.slice(1).map((h) => parseInt(h, 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.45 ? '#111114' : '#ffffff';
+}
+/** The hex behind a colour, for the native picker's starting value. */
+const toHex = (color: string) =>
+  color.startsWith('var(') ? getComputedStyle(document.documentElement).getPropertyValue(color.slice(4, -1)).trim() || '#808080' : color;
+const LEGEND_MAX = 12;
+
+/** The user's app colours (P79), and a setter that saves one. */
+function useAppColors() {
+  const [picked, setPicked] = useState<Record<string, string>>({});
+  useEffect(() => {
+    void window.spyder.getSettings().then((s) => setPicked(s.appColors));
+  }, []);
+  const pick = async (key: string, hex: string) => {
+    const cur = (await window.spyder.getSettings()).appColors;
+    setPicked((await window.spyder.setSettings({ appColors: { ...cur, [key]: hex } })).appColors);
+  };
+  return [picked, pick] as const;
+}
+
 export function Timeline({
   s,
   nowMs,
@@ -72,6 +99,7 @@ export function Timeline({
 }) {
   const [ref, width] = useWidth();
   const [tip, setTip] = useState<Tip | null>(null);
+  const [picked, pick] = useAppColors();
   const uid = useId().replace(/:/g, '');
 
   // Range: work window ±1 h (08:00–20:00 on a day off), widened to whole hours to fit all data.
@@ -91,8 +119,12 @@ export function Timeline({
   const w = (a: number, b: number) => Math.max(1.5, x(b) - x(a));
 
   const L = compact
-    ? { flag: 4, track: { y: 8, h: 20 }, strip: { y: 31, h: 3 }, axis: 48 }
-    : { flag: 4, track: { y: 9, h: 30 }, strip: { y: 43, h: 4 }, axis: 64 };
+    ? { flag: 4, track: { y: 8, h: 20 }, strip: { y: 31, h: 16 }, axis: 64 }
+    : { flag: 4, track: { y: 9, h: 30 }, strip: { y: 43, h: 26 }, axis: 86 };
+  const runs = appRuns(tl.activity);
+  const byApp = new Map<string, { slot: number; ms: number }>();
+  for (const r of runs) byApp.set(r.key, { slot: r.slot, ms: (byApp.get(r.key)?.ms ?? 0) + r.endMs - r.startMs });
+  const legend = [...byApp].sort((a, b) => b[1].ms - a[1].ms || a[0].localeCompare(b[0]));
   const height = L.axis + 4;
   const hours: number[] = [];
   for (let t = t0; t <= t1; t += H) hours.push(t);
@@ -122,6 +154,7 @@ export function Timeline({
         {/* Work hours are the lit part of the track. */}
         <rect x={PAD} y={ty} width={plotW} height={th} rx={4} fill="var(--color-surface-2)" opacity={0.45} />
         {win && <rect x={x(win.startMs)} y={ty} width={w(win.startMs, win.endMs)} height={th} rx={4} fill="var(--color-surface-2)" />}
+        <rect x={PAD} y={L.strip.y} width={plotW} height={L.strip.h} rx={4} fill="var(--color-surface-2)" opacity={0.45} />
         {hours.map((t, i) => (
           <g key={t}>
             <line x1={x(t)} x2={x(t)} y1={L.strip.y + L.strip.h + 2} y2={L.strip.y + L.strip.h + 6} stroke="var(--color-border-strong)" />
@@ -190,17 +223,30 @@ export function Timeline({
           <line x1={x(nowMs)} x2={x(nowMs)} y1={ty - 3} y2={L.strip.y + L.strip.h + 1} stroke="var(--color-accent)" strokeWidth={1.5} />
         )}
 
-        {tl.activity.map((b, i) => (
-          <rect
-            key={`a${i}`}
-            x={x(b.startMs)}
-            y={L.strip.y}
-            width={w(b.startMs, b.endMs)}
-            height={L.strip.h}
-            fill={CAT_COLOR[b.category]}
-            onMouseMove={(e) => show(e, [b.key, `${CAT_LABEL[b.category]} · ${span(b.startMs, b.endMs)}`])}
-          />
-        ))}
+        {runs.map((b, i) => {
+          const bw = w(b.startMs, b.endMs);
+          const fit = Math.floor((bw - 10) / 6); // ~6 px a character at 11 px
+          const label = fit >= b.key.length ? b.key : fit >= 4 ? `${b.key.slice(0, fit - 1)}…` : null;
+          return (
+            <g key={`a${i}`} onMouseMove={(e) => show(e, [b.key, `${CAT_LABEL[b.category]} · ${span(b.startMs, b.endMs)}`])}>
+              <rect
+                data-block="app"
+                data-key={b.key}
+                x={x(b.startMs)}
+                y={L.strip.y}
+                width={bw > 3 ? bw - 1 : bw}
+                height={L.strip.h}
+                rx={bw > 6 ? 2 : 0}
+                fill={appColor(picked, b.key, b.slot)}
+              />
+              {label && !compact && (
+                <text x={x(b.startMs) + 5} y={L.strip.y + L.strip.h / 2 + 4} fontSize={11} fontWeight={500} fill={inkFor(appColor(picked, b.key, b.slot))} pointerEvents="none">
+                  {label}
+                </text>
+              )}
+            </g>
+          );
+        })}
         {s.flags.map((f, i) => (
           <path
             key={`f${i}`}
@@ -211,6 +257,26 @@ export function Timeline({
           />
         ))}
       </svg>
+      {!compact && legend.length > 0 && (
+        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 px-[18px] text-[11px] text-muted" data-testid="app-legend">
+          {legend.slice(0, LEGEND_MAX).map(([key, { slot }]) => (
+            <label key={key} className="flex max-w-[180px] cursor-pointer items-center gap-1.5 hover:text-text" title={`Pick a colour for ${key}`}>
+              <span className="relative h-2 w-2 shrink-0 rounded-[2px]" style={{ background: appColor(picked, key, slot) }}>
+                <input
+                  type="color"
+                  data-testid="app-color"
+                  aria-label={`Colour for ${key}`}
+                  value={toHex(appColor(picked, key, slot))}
+                  onChange={(e) => void pick(key, e.target.value)}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                />
+              </span>
+              <span className="truncate">{key}</span>
+            </label>
+          ))}
+          {legend.length > LEGEND_MAX && <span className="text-faint">+{legend.length - LEGEND_MAX} more · Settings → App colours</span>}
+        </div>
+      )}
       {tip && (
         <div
           className="pointer-events-none absolute z-10 rounded-control border border-border bg-surface px-2.5 py-1.5 text-[12px] whitespace-nowrap shadow-pop tabular"

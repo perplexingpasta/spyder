@@ -1,6 +1,7 @@
 // Settings page (plan §5, §12; design/DESIGN.md §4 Settings). Every change applies live.
 import clsx from 'clsx';
 import { useEffect, useState, type ReactNode } from 'react';
+import { appSlot } from '../../core/aggregate';
 import { DEFAULT_SETTINGS, type Settings as S } from '../../core/settings';
 import type { ScheduleRow, SettingsVM } from '../../preload/api';
 import { Btn, inputCls } from '../ui/controls';
@@ -66,6 +67,17 @@ export function Settings() {
                     { value: 'dark', label: 'Dark' },
                   ]}
                   onChange={(v) => void set({ theme: v })}
+                />
+              </Field>
+              <Field label="Font" hint="for the whole app (P78)">
+                <Segmented
+                  testId="set-font"
+                  value={s.font}
+                  options={[
+                    { value: 'system', label: 'System' },
+                    { value: 'atkinson', label: 'Atkinson Hyperlegible' },
+                  ]}
+                  onChange={(v) => void set({ font: v })}
                 />
               </Field>
               {(
@@ -198,6 +210,7 @@ export function Settings() {
                 <ExportButton />
               </Field>
             </Card>
+            <AppColors picked={s.appColors} onChange={(appColors) => void set({ appColors })} />
           </div>
         </div>
       </div>
@@ -264,6 +277,60 @@ function NumberInput({
       />
       <span className="w-7 text-[12px] text-muted">{unit}</span>
     </div>
+  );
+}
+
+/**
+ * P79: colours picked for apps and sites (also picked from the timeline legend). A name must match the app or site as
+ * the timeline shows it; colours may repeat.
+ */
+function AppColors({ picked, onChange, className }: { picked: Record<string, string>; onChange: (m: Record<string, string>) => void; className?: string }) {
+  const [name, setName] = useState('');
+  const auto = (key: string) =>
+    getComputedStyle(document.documentElement).getPropertyValue(`--color-app-${appSlot(key) + 1}`).trim() || '#808080';
+  const add = () => {
+    const key = name.trim();
+    if (!key) return;
+    onChange({ ...picked, [key]: picked[key] ?? auto(key) });
+    setName('');
+  };
+  const rows = Object.keys(picked).sort((a, b) => a.localeCompare(b));
+  return (
+    <Card title="App colours" className={className}>
+      <div className="mb-2 text-[11px] text-faint">Apps and sites you don’t colour keep an automatic colour. Click a swatch in the timeline legend to pick one there.</div>
+      <div data-testid="app-colors">
+        {rows.map((key) => (
+          <div key={key} data-testid="app-color-row" className="flex min-h-10 items-center gap-2 border-b border-border py-1">
+            <input
+              type="color"
+              aria-label={`Colour for ${key}`}
+              value={picked[key]}
+              onChange={(e) => onChange({ ...picked, [key]: e.target.value })}
+              className="h-7 w-9 shrink-0 cursor-pointer rounded-control border border-border bg-surface p-0.5"
+            />
+            <span className="min-w-0 flex-1 truncate text-[13px]" title={key}>
+              {key}
+            </span>
+            <Btn size="sm" variant="ghost" aria-label={`Reset ${key}`} onClick={() => onChange(Object.fromEntries(Object.entries(picked).filter(([k]) => k !== key)))}>
+              Reset
+            </Btn>
+          </div>
+        ))}
+      </div>
+      <div className="mt-2 flex items-center gap-2">
+        <input
+          data-testid="app-color-name"
+          className={clsx(inputCls, 'h-8 min-w-0 flex-1')}
+          placeholder="App or site, e.g. youtube.com"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && add()}
+        />
+        <Btn size="sm" data-testid="app-color-add" disabled={!name.trim()} onClick={add}>
+          Add
+        </Btn>
+      </div>
+    </Card>
   );
 }
 

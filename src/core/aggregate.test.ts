@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { alikeRuns, appKey, dayLog, daySummary, gaps, neighbours, timeSplit, type DayActivity, type DayData, type DaySession, type LogEntry } from './aggregate';
+import { alikeRuns, appKey, appRuns, appSlot, dayLog, daySummary, gaps, neighbours, timeSplit, type DayActivity, type DayData, type DaySession, type LogEntry } from './aggregate';
 import type { Rule } from './categorize';
 import { DEFAULT_RULES } from './defaults';
 import { leftovers } from './review';
@@ -357,5 +357,28 @@ describe('efficiency (P75)', () => {
     x.sessions = x.sessions.map((s) => ({ ...s, efficiency: null }));
     const d = daySummary('2026-11-24', x, rules, S);
     expect([d.ratedSec, d.effectiveSec, d.efficiency]).toEqual([0, 0, null]);
+  });
+});
+
+describe('app track (P77)', () => {
+  const r = (s: number, e: number, key: string) => ({ startMs: s, endMs: e, key, category: 'neutral' as const });
+  const sec = (n: number) => at(10) + n * 1000;
+
+  it('joins back-to-back runs of one key and keeps every switch, however short', () => {
+    const out = appRuns([r(sec(0), sec(60), 'VS Code'), r(sec(60), sec(120), 'VS Code'), r(sec(120), sec(122), 'youtube.com'), r(sec(122), sec(200), 'VS Code')]);
+    expect(out.map((x) => [x.key, (x.endMs - x.startMs) / 1000])).toEqual([['VS Code', 120], ['youtube.com', 2], ['VS Code', 78]]);
+  });
+
+  it('does not join across a gap longer than a sample', () => {
+    expect(appRuns([r(sec(0), sec(10), 'A'), r(sec(20), sec(30), 'A')])).toHaveLength(2);
+  });
+
+  it('gives every app a colour slot fixed by its name, the same any day (P79)', () => {
+    const out = appRuns([r(sec(0), sec(10), 'VS Code'), r(sec(10), sec(20), 'youtube.com'), r(sec(20), sec(900), 'Slack')]);
+    expect(out.map((x) => x.slot)).toEqual([appSlot('VS Code'), appSlot('youtube.com'), appSlot('Slack')]);
+    expect(appRuns([r(sec(0), sec(5000), 'VS Code')])[0].slot).toBe(appSlot('VS Code')); // rank doesn't change it
+    const slots = Array.from({ length: 50 }, (_, i) => appSlot(`app ${i}`));
+    expect(slots.every((n) => Number.isInteger(n) && n >= 0 && n < 8)).toBe(true);
+    expect(new Set(slots).size).toBe(8); // spread over all 8 colours
   });
 });

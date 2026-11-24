@@ -123,6 +123,21 @@ describe('cleanSettings', () => {
     expect(cleanSettings({ workColor: 42 })).toEqual({});
   });
 
+  it('P78: the font is System or Atkinson Hyperlegible', () => {
+    expect(DEFAULT_SETTINGS.font).toBe('system');
+    expect(cleanSettings({ font: 'atkinson' })).toEqual({ font: 'atkinson' });
+    expect(cleanSettings({ font: 'Comic Sans' })).toEqual({});
+  });
+
+  it('P79: app colours map app keys to #rrggbb, dropping bad entries; colours may repeat', () => {
+    expect(DEFAULT_SETTINGS.appColors).toEqual({});
+    expect(cleanSettings({ appColors: { 'VS Code': '#AA0000', 'youtube.com': '#aa0000', Slack: 'red', ' ': '#000000' } })).toEqual({
+      appColors: { 'VS Code': '#aa0000', 'youtube.com': '#aa0000' },
+    });
+    expect(cleanSettings({ appColors: ['#aa0000'] })).toEqual({});
+    expect(cleanSettings({ appColors: null })).toEqual({});
+  });
+
   it('P50: the widget style setting is gone', () => {
     expect(cleanSettings({ widgetStyle: 'compact', theme: 'sepia' })).toEqual({});
   });

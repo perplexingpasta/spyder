@@ -19,6 +19,10 @@ export interface Settings {
   /** P74: the colours of gym and food blocks, #rrggbb. */
   gymColor: string;
   foodColor: string;
+  /** P78: the font of every window. */
+  font: 'system' | 'atkinson';
+  /** P79: colours the user picked for apps and sites (app key → #rrggbb); the rest keep their automatic colour. */
+  appColors: Record<string, string>;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -38,6 +42,8 @@ export const DEFAULT_SETTINGS: Settings = {
   workColor: '#3fb27f',
   gymColor: '#e8853d',
   foodColor: '#d9669b',
+  font: 'system',
+  appColors: {},
 };
 
 export interface ScheduleRow {
@@ -74,6 +80,7 @@ const MAX: Partial<Record<keyof Settings, number>> = {
 const ENUMS: Partial<Record<keyof Settings, readonly unknown[]>> = {
   appPercentScope: ['work_hours', 'all_day'],
   theme: ['system', 'light', 'dark'],
+  font: ['system', 'atkinson'],
 };
 
 /** Drops unknown keys and invalid values from a settings change; numbers are clamped to their range. */
@@ -91,6 +98,12 @@ export function cleanSettings(partial: Record<string, unknown>): Partial<Setting
       if (v === null || (typeof v === 'object' && typeof (v as { x: unknown }).x === 'number' && typeof (v as { y: unknown }).y === 'number')) out[k] = v;
     } else if (key === 'workColor' || key === 'gymColor' || key === 'foodColor') {
       if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) out[k] = v.toLowerCase();
+    } else if (key === 'appColors') {
+      if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+        out[k] = Object.fromEntries(
+          Object.entries(v).filter(([app, c]) => app.trim() && typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c)).map(([app, c]) => [app, (c as string).toLowerCase()]),
+        );
+      }
     } else if (key === 'hotkey') {
       if (typeof v === 'string' && v.trim()) out[k] = v.trim();
     } else if (typeof v === typeof def) out[k] = v;

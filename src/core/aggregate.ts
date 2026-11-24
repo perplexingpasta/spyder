@@ -182,6 +182,29 @@ export function ruleTarget(a: ActivityFacts): AppRow['ruleTarget'] {
   return { matchType: 'app', pattern: a.exe.toLowerCase() };
 }
 
+export const APP_SLOTS = 8;
+
+/** P79: an app or site's automatic colour slot, fixed by its name so it's the same every day (slots repeat across apps). */
+export function appSlot(key: string): number {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  return h % APP_SLOTS;
+}
+
+/**
+ * P77: the timeline's app track. Back-to-back activity of the same app or site (within one 2 s sample) is one run;
+ * every switch stays, however short. Each run carries its key's fixed colour slot (P79).
+ */
+export function appRuns(acts: DaySummary['timeline']['activity']): (Block & { key: string; category: ActivityCategory; slot: number })[] {
+  const runs: (Block & { key: string; category: ActivityCategory })[] = [];
+  for (const a of [...acts].sort((p, q) => p.startMs - q.startMs)) {
+    const last = runs.at(-1);
+    if (last && last.key === a.key && a.startMs - last.endMs <= 2000) last.endMs = Math.max(last.endMs, a.endMs);
+    else runs.push({ ...a });
+  }
+  return runs.map((r) => ({ ...r, slot: appSlot(r.key) }));
+}
+
 export function daySummary(
   date: string,
   data: DayData,

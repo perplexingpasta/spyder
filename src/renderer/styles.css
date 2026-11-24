@@ -46,6 +46,19 @@
   --shadow-pop: 0 4px 16px rgba(0, 0, 0, 0.45);
 }
 
+:root {
+  /* P77: the app track's 8 colour slots (validated categorical set, stepped per theme). Outside @theme so Tailwind
+     keeps them though no class uses them. */
+  --color-app-1: #3987e5;
+  --color-app-2: #d95926;
+  --color-app-3: #199e70;
+  --color-app-4: #c98500;
+  --color-app-5: #d55181;
+  --color-app-6: #0ca30c;
+  --color-app-7: #9085e9;
+  --color-app-8: #e66767;
+}
+
 /* Light theme (P57): follows Windows unless Settings picks one (nativeTheme.themeSource). */
 @media (prefers-color-scheme: light) {
   :root {
@@ -74,6 +87,15 @@
     --color-neutral: #a1a1aa;
     --color-distracting: #e5484d;
     --color-uncategorized: #d4d4d8;
+
+    --color-app-1: #2a78d6;
+    --color-app-2: #eb6834;
+    --color-app-3: #1baf7a;
+    --color-app-4: #eda100;
+    --color-app-5: #e87ba4;
+    --color-app-6: #008300;
+    --color-app-7: #6250d6;
+    --color-app-8: #e34948;
 
     --shadow-float: 0 8px 24px rgba(16, 16, 24, 0.12), 0 0 0 1px rgba(16, 16, 24, 0.06);
     --shadow-pop: 0 4px 16px rgba(16, 16, 24, 0.1), 0 0 0 1px rgba(16, 16, 24, 0.05);

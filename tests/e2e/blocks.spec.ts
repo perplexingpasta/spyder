@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { Db } from '../../src/main/db/db';
 import { dayVM } from '../../src/main/report';
 import { loadSettings } from '../../src/main/settings';
-import { timeSplit } from '../../src/core/aggregate';
+import { appRuns, appSlot, timeSplit } from '../../src/core/aggregate';
 import { dur, statTexts } from '../../src/renderer/dashboard/stats';
 import { freshDataDir, launch, seed, shot, type Launched } from './helpers';
 
@@ -124,6 +124,24 @@ test('joined answers, re-answer, answer many, delete → undo, merge → undo on
   await d.getByTestId('timeline-card').scrollIntoViewIfNeeded();
   await block.hover();
   await shot(d, 'today-timeline');
+
+  // The app track (P77): one run per stretch on an app or site, every switch kept; the biggest app leads the legend.
+  const runs = appRuns((await expected(dir, nowMs)).summary.timeline.activity);
+  expect(runs.length).toBeGreaterThan(1);
+  await expect(d.locator('[data-block=app]')).toHaveCount(runs.length);
+  const ms = new Map<string, number>();
+  for (const r of runs) ms.set(r.key, (ms.get(r.key) ?? 0) + r.endMs - r.startMs);
+  const biggest = [...ms].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
+  const legend = d.getByTestId('app-legend');
+  await expect(legend.locator('span.truncate').first()).toHaveText(biggest);
+  // Every app has a colour fixed by its name (P79); picking one from the legend recolours it at once and is kept.
+  const run = d.locator(`[data-block=app][data-key="${biggest}"]`).first();
+  await expect(run).toHaveAttribute('fill', `var(--color-app-${appSlot(biggest) + 1})`);
+  await legend.getByTestId('app-color').first().fill('#123456');
+  await expect(run).toHaveAttribute('fill', '#123456');
+  await expect.poll(() => (s!.db().prepare("SELECT value FROM settings WHERE key = 'appColors'").get() as { value: string } | undefined)?.value).toBe(
+    JSON.stringify({ [biggest]: '#123456' }),
+  );
 });
 
 test('neighbours merge across a gap too short to show; Merge repeats merges every run with one Undo (P73)', async () => {

@@ -6,7 +6,7 @@ import { helperPath } from './capture/chromeUrl';
 import type { AppCtx } from './context';
 import { rendererUrl } from './paths';
 import { saveSettings } from './settings';
-import { windowBackground } from './theme';
+import { applyFontTo, windowBackground } from './theme';
 
 /** The bar (P49): 512 × 34 plus an 8 px margin on every side (design/DESIGN.md §2). */
 export const WIDGET_SIZE = { width: 528, height: 50 } as const;
@@ -23,7 +23,8 @@ const webPreferences = () => ({
   backgroundThrottling: false,
 });
 
-function load(win: BrowserWindow, hash: string): void {
+function load(ctx: AppCtx, win: BrowserWindow, hash: string): void {
+  win.webContents.on('did-finish-load', () => void applyFontTo(ctx, win)); // P78
   const r = rendererUrl(hash);
   if (r.url) void win.loadURL(r.url);
   else void win.loadFile(r.file!, { hash: r.hash });
@@ -87,7 +88,7 @@ export function createWidget(ctx: AppCtx): BrowserWindow {
       win.hide();
     }
   });
-  load(win, '/widget');
+  load(ctx, win, '/widget');
   return win;
 }
 
@@ -114,7 +115,7 @@ export function createPrompt(ctx: AppCtx): BrowserWindow {
   win.on('close', (e) => {
     if (!ctx.quitting) e.preventDefault();
   });
-  load(win, '/prompt');
+  load(ctx, win, '/prompt');
   return win;
 }
 
@@ -191,7 +192,7 @@ export function createDashboard(ctx: AppCtx, route = 'today'): BrowserWindow {
       win.hide();
     }
   });
-  load(win, `/dashboard/${route}`);
+  load(ctx, win, `/dashboard/${route}`);
   return win;
 }
 

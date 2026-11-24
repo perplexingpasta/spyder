@@ -17,7 +17,7 @@ import * as report from './report';
 import { dateKey } from '../core/schedule';
 import { loadSettings, saveSettings } from './settings';
 import { BlockEditor } from './blockEdit';
-import { applyTheme } from './theme';
+import { applyFont, applyTheme } from './theme';
 import { isAppUrl } from './paths';
 import { hideWidget, openDashboard, resizePrompt, showWidget } from './windows';
 
@@ -47,6 +47,7 @@ export function registerIpc(ctx: AppCtx, host: EngineHost, hooks: IpcHooks): voi
     if ('hotkey' in partial) registerHotkey(ctx);
     if ('autostart' in partial) applyAutostart(ctx);
     if ('theme' in partial) applyTheme(ctx);
+    if ('font' in partial) applyFont(ctx);
     if ('goalSec' in partial || 'appPercentScope' in partial) host.reloadRules();
     if (partial.blockLengthSec !== undefined) host.setLength(partial.blockLengthSec);
     host.push();
