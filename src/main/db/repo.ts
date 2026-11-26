@@ -67,7 +67,7 @@ function applyOne(db: Db, e: DbEffect): void {
       db.run('DELETE FROM sessions WHERE id = ?', e.id);
       return;
     case 'insertGapBlock':
-      insertEndedBlock(db, { ...e.row, tag: 'break' });
+      insertEndedBlock(db, e.row);
       return;
   }
 }
@@ -80,7 +80,7 @@ export function insertEndedBlock(
   db.run(
     `INSERT INTO sessions (id, kind, tag, name, status, started_ms, ended_ms, elapsed_sec, end_reason, created_ms)
      VALUES (?, ?, ?, ?, 'done', ?, ?, ?, 'done', ?)`,
-    b.id, b.tag === 'work' ? 'open' : 'break', b.tag === 'gym' || b.tag === 'food' ? b.tag : null,
+    b.id, b.tag === 'work' ? 'open' : 'break', b.tag === 'work' || b.tag === 'break' ? null : b.tag,
     b.tag === 'work' ? b.name : (b.name ?? BREAK_NAME), b.startMs, b.endMs, Math.round((b.endMs - b.startMs) / 1000), b.createdMs,
   );
   db.run(`INSERT INTO segments (id, session_id, start_ms, end_ms, source) VALUES (?, ?, ?, ?, 'live')`, b.segmentId, b.id, b.startMs, b.endMs);
@@ -156,9 +156,9 @@ export function pendingBlocks(
   toMs: number,
   gapIds: string[] = [],
   gapName = '',
-): { id: string; start_ms: number; end_ms: number }[] {
+): { id: string; start_ms: number; end_ms: number; tag: string | null }[] {
   return db.all(
-    `SELECT id, started_ms AS start_ms, ended_ms AS end_ms FROM sessions
+    `SELECT id, started_ms AS start_ms, ended_ms AS end_ms, tag FROM sessions
       WHERE ((kind = 'open' AND name IS NULL) OR (id IN (${gapIds.map(() => '?').join(',')}) AND name = ?))
         AND status = 'done' AND deleted_ms IS NULL AND ended_ms IS NOT NULL
         AND started_ms >= ? AND started_ms < ? ORDER BY started_ms`,

@@ -1,11 +1,11 @@
-// Where the day's time went (P68, P74): a donut of work, break, gym, food, not accounted for and untracked, with a legend.
+// Where the day's time went (P68, P74, P105): a donut of work, break, gym, food, sleep, not accounted for and untracked, with a legend.
 import { useId, useState } from 'react';
 import { timeSplit, type DaySummary, type TimeSplitKey } from '../../core/aggregate';
 import { Empty } from './parts';
 import { TAG_COLOR } from './Timeline';
 import { dur } from './stats';
 
-const LABEL: Record<TimeSplitKey, string> = { work: 'Work', break: 'Break', gym: 'Gym', food: 'Food', unanswered: 'Not accounted for', untracked: 'Untracked' };
+const LABEL: Record<TimeSplitKey, string> = { work: 'Work', break: 'Break', gym: 'Gym', food: 'Food', sleep: 'Sleep', unanswered: 'Not accounted for', untracked: 'Untracked' };
 const SIZE = 132;
 const R = 62;
 const INNER = 42;

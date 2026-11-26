@@ -694,7 +694,7 @@ function AnswerPanel({
   );
 }
 
-/** P66, P74: a block's tag, Work, Break, Gym or Food. With `value` null it's a "Tag…" picker for the selected blocks. */
+/** P66, P74, P105: a block's tag, Work, Break, Gym, Food or Sleep. With `value` null it's a "Tag…" picker for the selected blocks. */
 function TagSelect({
   testId,
   label,
@@ -820,7 +820,7 @@ function useAppTrack() {
   return [on ?? false, set] as const;
 }
 
-/** P80: names match the block log; Gym and Food only on days that have them. */
+/** P80: names match the block log; Gym, Food and Sleep only on days that have them. */
 function TimelineLegend({ s }: { s: DayVM['summary'] }) {
   const has = (t: Tag) => s.sessions.some((x) => x.tag === t);
   const item = (swatch: ReactNode, label: string) => (
@@ -836,6 +836,7 @@ function TimelineLegend({ s }: { s: DayVM['summary'] }) {
       {item(<span className="h-2 w-2 rounded-[2px] bg-break/50" />, 'Break')}
       {has('gym') && item(<span className="h-2 w-2 rounded-[2px] bg-gym/50" />, 'Gym')}
       {has('food') && item(<span className="h-2 w-2 rounded-[2px] bg-food/50" />, 'Food')}
+      {has('sleep') && item(<span className="h-2 w-2 rounded-[2px] bg-sleep/50" />, 'Sleep')}
       {item(<span className="hatch h-2 w-2 rounded-[2px]" />, 'Untracked')}
     </span>
   );

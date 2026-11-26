@@ -37,12 +37,13 @@ interface Tip {
   lines: string[];
 }
 
-/** Each tag's colour (P67, P74); work, gym and food follow Settings. */
+/** Each tag's colour (P67, P74, P105); work, gym, food and sleep follow Settings. */
 export const TAG_COLOR: Record<Tag, string> = {
   work: 'var(--color-work)',
   break: 'var(--color-break)',
   gym: 'var(--color-gym)',
   food: 'var(--color-food)',
+  sleep: 'var(--color-sleep)',
 };
 
 /** The colour a block gets everywhere (P67, P74): its tag's colour; a work block not accounted for is grey. */

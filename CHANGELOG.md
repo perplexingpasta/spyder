@@ -7,6 +7,22 @@ changed default, a migration, a new setting or a test-helper change. The full re
 
 Add an entry in the same commit as the change (see AGENTS.md → Commits).
 
+## 2026-11-27: Ask about time asleep or off all day; the Sleep tag (P105)
+
+**What**
+- Settings → Blocks & nudges → **Ask about time asleep or off**: `Work hours` (as before) or `All day`.
+- With All day, time the laptop was asleep or off outside work hours (while blocks ran) becomes `Computer asleep or off` blocks tagged **Sleep**, one per stretch of a day, which the prompt asks about on wake with a new **Sleep** button.
+- **Sleep** is a new tag: neither work nor break time. It has its own colour (Settings → Look), slice in Where the day went, legend entry, tag-dropdown entry and export kind `sleep`.
+- Days with only Sleep blocks don't count for the midnight card.
+
+**Why**
+Sleep after midnight and a night with the laptop off were left untracked and never asked about; the user wants every minute accounted for without the night swelling break time.
+
+**If you pull this**
+- Migration 009 rebuilds `sessions.tag` so its CHECK allows `sleep` (the column moves to the end of the table; no rows change).
+- New settings keys `asleepScope` (default `work_hours`, so nothing changes until you pick All day) and `sleepColor`.
+- `insertGapBlock` rows carry a `tag` (`break` / `sleep`); `EngineSettings` includes `asleepScope`.
+
 ## 2026-11-26: Collapsed rows show their efficiency (P104)
 
 **What**

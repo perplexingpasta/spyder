@@ -62,12 +62,13 @@ export function CategoryButtons({ current, onPick, size }: { current: ActivityCa
  * focus. Returns the latest value and a manual reload.
  */
 /** P67: the user's work colour, used by every work block in the dashboard. */
-/** P67, P74: the user's tag colours from Settings. */
-export function applyTagColors(s: { workColor: string; gymColor: string; foodColor: string }): void {
+/** P67, P74, P105: the user's tag colours from Settings. */
+export function applyTagColors(s: { workColor: string; gymColor: string; foodColor: string; sleepColor: string }): void {
   const root = document.documentElement.style;
   root.setProperty('--color-work', s.workColor);
   root.setProperty('--color-gym', s.gymColor);
   root.setProperty('--color-food', s.foodColor);
+  root.setProperty('--color-sleep', s.sleepColor);
 }
 
 /** P90: how strongly the dashboard's glass is tinted, from Settings. */

@@ -36,7 +36,7 @@ export function loadDayData(db: Db, date: string, nowMs: number): DayData {
     .all<{
       id: string; kind: DayData['sessions'][number]['kind']; name: string | null; project_id: string | null;
       pname: string | null; pcolor: string | null; planned_sec: number | null; status: DayData['sessions'][number]['status'];
-      started_ms: number; ended_ms: number | null; end_reason: DayData['sessions'][number]['endReason']; tag: 'gym' | 'food' | null;
+      started_ms: number; ended_ms: number | null; end_reason: DayData['sessions'][number]['endReason']; tag: 'gym' | 'food' | 'sleep' | null;
       efficiency: number | null; merged: number;
     }>(
       `SELECT s.id, s.kind, s.name, s.project_id, p.name AS pname, p.color AS pcolor, s.planned_sec, s.status,

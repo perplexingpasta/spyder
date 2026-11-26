@@ -14,6 +14,8 @@ export interface PendingBlock {
   apps: string[];
   /** P95: a break block filled over time Spyder was asleep or off. */
   gap?: boolean;
+  /** P105: that filled block is Sleep (outside work hours), not a break. */
+  sleep?: boolean;
 }
 
 export interface AccountBlockVM extends PendingBlock {
@@ -71,12 +73,14 @@ export type PromptVM = AccountVM | ReminderVM | ReflectVM;
 
 /** P95: the hint on a block filled over time Spyder was asleep or off. */
 export const GAP_HINT = 'Computer asleep or off · a break until answered';
+/** P105: the hint on a Sleep block filled over time asleep or off outside work hours. */
+export const SLEEP_GAP_HINT = 'Computer asleep or off · sleep until answered';
 
 const range = (b: PendingBlock) => `${fmtTime(b.startMs)}–${fmtTime(b.endMs)}`;
 
 export function blockHint(b: PendingBlock): string | null {
   const parts: string[] = [];
-  if (b.gap) parts.push(GAP_HINT);
+  if (b.gap) parts.push(b.sleep ? SLEEP_GAP_HINT : GAP_HINT);
   if (b.awaySec >= 60) parts.push(`Away ${fmtDuration(b.awaySec)}`);
   if (b.apps.length) parts.push(b.apps.join(', '));
   return parts.length ? parts.join(' · ') : null;

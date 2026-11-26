@@ -418,6 +418,7 @@ function StarClock({ s, w, nowMs }: { s: DaySummary; w: WidgetPayload | null; no
           <Key color="var(--color-break)" label="Break" />
           {tags.has('gym') && <Key color="var(--color-gym)" label="Gym" />}
           {tags.has('food') && <Key color="var(--color-food)" label="Food" />}
+          {tags.has('sleep') && <Key color="var(--color-sleep)" label="Sleep" />}
           <Key color="repeating-linear-gradient(45deg,#5E5E68 0 2px,transparent 2px 4px)" label="Untracked" />
         </div>
         {legend.length > 0 && (

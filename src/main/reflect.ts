@@ -20,9 +20,12 @@ export function reflectDay(db: Db, nowMs: number): ReflectDay | null {
   return last.wins.length && last.improves.length ? null : last;
 }
 
-/** The last day before today with blocks, with its wins and improvements. */
+/** The last day before today with blocks (Sleep blocks don't count, P105), with its wins and improvements. */
 export function lastDay(db: Db, nowMs: number): ReflectDay | null {
-  const last = db.get<{ s: number | null }>('SELECT MAX(started_ms) AS s FROM sessions WHERE deleted_ms IS NULL AND started_ms < ?', startOfDay(nowMs));
+  const last = db.get<{ s: number | null }>(
+    "SELECT MAX(started_ms) AS s FROM sessions WHERE deleted_ms IS NULL AND tag IS NOT 'sleep' AND started_ms < ?",
+    startOfDay(nowMs),
+  );
   if (last?.s == null) return null;
   const date = dateKey(last.s);
   const items = db.all<{ kind: string; text: string }>('SELECT kind, text FROM review_items WHERE date = ? ORDER BY sort, created_ms', date);

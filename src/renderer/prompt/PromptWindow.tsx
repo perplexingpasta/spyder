@@ -76,14 +76,16 @@ function BlockLine({ b, right }: { b: AccountBlockVM; right?: ReactNode }) {
 }
 
 /**
- * A row's answer in "Each separately": text, whether it's a break (P66: a break may have text too), and its
- * efficiency (P75, work only).
+ * A row's answer in "Each separately": text, whether it's a break (P66: a break may have text too) or sleep (P105,
+ * only on a Sleep gap block), and its efficiency (P75, work only).
  */
-type RowAnswer = { text: string; isBreak: boolean; efficiency: Efficiency | null };
+type RowAnswer = { text: string; as: 'work' | 'break' | 'sleep'; efficiency: Efficiency | null };
 
 /** "What did you do?" for every ended, unanswered block of today (P60). */
 function AccountCard({ p }: { p: AccountVM }) {
   const many = p.blocks.length > 1;
+  // P105: Sleep is offered for Sleep gap blocks only; in one answer for all, only when every block is one.
+  const allSleep = p.blocks.every((b) => b.sleep);
   const [mode, setMode] = useState<'all' | 'each'>('all');
   const [text, setText] = useState('');
   const [efficiency, setEfficiency] = useState<Efficiency | null>(null);
@@ -99,14 +101,14 @@ function AccountCard({ p }: { p: AccountVM }) {
     if (tag === 'work' && !answer.trim()) return setError(NEED);
     void send(p.blocks.map((b) => ({ id: b.id, answer: answer.trim() || null, tag, ...(tag === 'work' && efficiency !== null && { efficiency }) })));
   };
-  const row = (id: string): RowAnswer => rows[id] ?? { text: '', isBreak: false, efficiency: null };
+  const row = (id: string): RowAnswer => rows[id] ?? { text: '', as: 'work', efficiency: null };
   const setRow = (id: string, r: Partial<RowAnswer>) => setRows((all) => ({ ...all, [id]: { ...row(id), ...r } }));
   // Rows left empty stay pending for later.
   const saveEach = () =>
     void send(
       p.blocks.flatMap((b): BlockAnswer[] => {
         const r = row(b.id);
-        if (r.isBreak) return [{ id: b.id, answer: r.text.trim() || null, tag: 'break' }];
+        if (r.as !== 'work') return [{ id: b.id, answer: r.text.trim() || null, tag: r.as }];
         return r.text.trim() ? [{ id: b.id, answer: r.text, tag: 'work', ...(r.efficiency !== null && { efficiency: r.efficiency }) }] : [];
       }),
     );
@@ -150,6 +152,11 @@ function AccountCard({ p }: { p: AccountVM }) {
             <Btn pill data-testid="account-break" onClick={() => all(text, 'break')}>
               Break
             </Btn>
+            {allSleep && (
+              <Btn pill data-testid="account-sleep" onClick={() => all(text, 'sleep')}>
+                Sleep
+              </Btn>
+            )}
             {p.lastAnswer && (
               <Btn pill variant="ghost" data-testid="account-same" title="Same as last" onClick={() => all(p.lastAnswer ?? '', 'work')}>
                 <span className="max-w-[180px] truncate">Same: {p.lastAnswer}</span>
@@ -165,7 +172,7 @@ function AccountCard({ p }: { p: AccountVM }) {
                 <BlockLine
                   b={b}
                   right={
-                    !row(b.id).isBreak && (
+                    row(b.id).as === 'work' && (
                       <EfficiencyPicker value={row(b.id).efficiency} onChange={(e) => setRow(b.id, { efficiency: e })} testId="account-row-efficiency" />
                     )
                   }
@@ -176,12 +183,22 @@ function AccountCard({ p }: { p: AccountVM }) {
                   </div>
                   <Btn
                     size="sm"
-                    variant={row(b.id).isBreak ? 'outline' : 'secondary'}
+                    variant={row(b.id).as === 'break' ? 'outline' : 'secondary'}
                     data-testid="account-row-break"
-                    onClick={() => setRow(b.id, { isBreak: !row(b.id).isBreak })}
+                    onClick={() => setRow(b.id, { as: row(b.id).as === 'break' ? 'work' : 'break' })}
                   >
                     Break
                   </Btn>
+                  {b.sleep && (
+                    <Btn
+                      size="sm"
+                      variant={row(b.id).as === 'sleep' ? 'outline' : 'secondary'}
+                      data-testid="account-row-sleep"
+                      onClick={() => setRow(b.id, { as: row(b.id).as === 'sleep' ? 'work' : 'sleep' })}
+                    >
+                      Sleep
+                    </Btn>
+                  )}
                 </div>
               </div>
             ))}

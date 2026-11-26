@@ -240,7 +240,7 @@ export class BlockEditor {
     } else {
       this.db.run(`UPDATE sessions SET name = CASE WHEN kind = 'break' AND name = ? THEN NULL ELSE name END, kind = 'open', tag = NULL WHERE id ${list}`, BREAK_NAME, ...rowIds);
     }
-    const as: Record<Tag, string> = { work: 'work', break: 'a break', gym: 'gym', food: 'food' };
+    const as: Record<Tag, string> = { work: 'work', break: 'a break', gym: 'gym', food: 'food', sleep: 'sleep' };
     const message = rows.length === 1 ? `“${answerOf(rows[0])}” is now ${as[tag]}` : `Tagged ${rows.length} blocks ${TAG_LABEL[tag]}`;
     return this.finish({ id: randomUUID(), blocks: rows, segments: [], flags: [], dates: [...new Set(rows.map((r) => dateKey(r.started_ms as number)))] }, message);
   }

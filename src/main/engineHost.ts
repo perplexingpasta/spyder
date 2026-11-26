@@ -262,6 +262,7 @@ export class EngineHost {
           awaySec: gap ? 0 : this.awaySecIn(b.start_ms, b.end_ms, now),
           apps: gap ? [] : repo.topApps(this.app.db, b.start_ms, b.end_ms),
           ...(gap && { gap: true }),
+          ...(gap && b.tag === 'sleep' && { sleep: true }),
         };
       });
       // P70: what these blocks used that still wants the user's label.

@@ -57,7 +57,7 @@ The free text that says what a block was spent on. Consecutive blocks with the s
 _Avoid_: label, name
 
 **Tag**:
-Whether a block is Work, Break, Gym or Food. Every block has exactly one tag, set apart from its answer and changeable after the fact. Gym and Food are kinds of break: their time counts as break time (P74).
+Whether a block is Work, Break, Gym, Food or Sleep. Every block has exactly one tag, set apart from its answer and changeable after the fact. Gym and Food are kinds of break: their time counts as break time (P74). Sleep counts as neither work nor break (P105).
 _Avoid_: kind, type, category (categories are for activity)
 
 **Work block**:
@@ -68,8 +68,11 @@ A block tagged Break, Gym or Food. It may have an answer (e.g. "took a nap") or 
 _Avoid_: pause
 
 **Computer asleep or off**:
-Work-hours time when the loop was running but the laptop slept or Spyder wasn't running. It becomes a break block reading "Computer asleep or off", which the prompt asks about on return (P95). Time outside work hours stays untracked.
+Work-hours time when the loop was running but the laptop slept or Spyder wasn't running. It becomes a break block reading "Computer asleep or off", which the prompt asks about on return (P95). Time outside work hours stays untracked, unless Settings asks about it all day: then it becomes a sleep block reading the same (P105).
 _Avoid_: sleep gap, downtime
+
+**Sleep block**:
+A block tagged Sleep. Spyder makes one for time asleep or off outside work hours when Settings asks about it all day, and any block can be tagged Sleep by hand. It's neither work nor break time and isn't a leftover (P105).
 
 **Away time** (in a block):
 Minutes within a block when the user wasn't at the computer. The loop keeps running; away time is shown as a hint when the block is accounted for and isn't asked about separately.

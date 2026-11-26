@@ -19,6 +19,8 @@ export interface Settings {
   /** P74: the colours of gym and food blocks, #rrggbb. */
   gymColor: string;
   foodColor: string;
+  /** P105: the colour of sleep blocks, #rrggbb. */
+  sleepColor: string;
   /** P76: the loop runs from launch or wake until shutdown or sleep, whatever the work hours (on by default, P82). */
   trackFromStartup: boolean;
   /** P82: the bar's percent cell shows the workday % or the goal %. */
@@ -35,6 +37,8 @@ export interface Settings {
   accentColor: string | null;
   /** P98: after a day ends, the prompt asks for its wins and how I'll improve. */
   askReflection: boolean;
+  /** P105: which part of a stretch asleep or off becomes blocks: work hours only (P95) or the whole day. */
+  asleepScope: 'work_hours' | 'all_day';
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -54,6 +58,7 @@ export const DEFAULT_SETTINGS: Settings = {
   workColor: '#3fb27f',
   gymColor: '#e8853d',
   foodColor: '#d9669b',
+  sleepColor: '#6c71c4',
   trackFromStartup: true,
   barPercent: 'goal',
   font: 'system',
@@ -62,6 +67,7 @@ export const DEFAULT_SETTINGS: Settings = {
   glassTint: 55,
   accentColor: null,
   askReflection: true,
+  asleepScope: 'work_hours',
 };
 
 export interface ScheduleRow {
@@ -102,6 +108,7 @@ const ENUMS: Partial<Record<keyof Settings, readonly unknown[]>> = {
   theme: ['system', 'light', 'dark'],
   font: ['system', 'atkinson'],
   barPercent: ['day', 'goal'],
+  asleepScope: ['work_hours', 'all_day'],
 };
 
 /** Drops unknown keys and invalid values from a settings change; numbers are clamped to their range. */
@@ -117,7 +124,7 @@ export function cleanSettings(partial: Record<string, unknown>): Partial<Setting
       if (ENUMS[key]!.includes(v)) out[k] = v;
     } else if (key === 'widgetPos') {
       if (v === null || (typeof v === 'object' && typeof (v as { x: unknown }).x === 'number' && typeof (v as { y: unknown }).y === 'number')) out[k] = v;
-    } else if (key === 'workColor' || key === 'gymColor' || key === 'foodColor') {
+    } else if (key === 'workColor' || key === 'gymColor' || key === 'foodColor' || key === 'sleepColor') {
       if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) out[k] = v.toLowerCase();
     } else if (key === 'accentColor') {
       if (v === null) out[k] = null;

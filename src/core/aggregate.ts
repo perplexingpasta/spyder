@@ -17,8 +17,8 @@ export interface DaySession {
   startedMs: number;
   endedMs: number | null;
   endReason: EndReason | null;
-  /** P74: Gym or Food on a break; left out or null otherwise. */
-  tag?: 'gym' | 'food' | null;
+  /** P74, P105: Gym, Food or Sleep on a break; left out or null otherwise. */
+  tag?: 'gym' | 'food' | 'sleep' | null;
   /** P75: the user's rating, 0–100 (25/50/75/100 when picked; a merge keeps the mean). Left out or null = not rated. */
   efficiency?: number | null;
   /** P86: made by a merge that can be unmerged. Left out = no. */
@@ -90,7 +90,7 @@ export interface SessionLine {
   projectName: string | null;
   projectColor: string | null;
   kind: Kind;
-  /** P66, P74: Work, Break, Gym or Food. */
+  /** P66, P74, P105: Work, Break, Gym, Food or Sleep. */
   tag: Tag;
   /** P75: 0–100, or null when not rated. Only counts on work blocks. */
   efficiency: number | null;
@@ -221,6 +221,7 @@ export function daySummary(
   const d1 = addDays(d0, 1);
   const win = data.window;
   const kindOf = new Map(data.sessions.map((s) => [s.id, s.kind]));
+  const sleeps = new Set(data.sessions.filter((s) => tagOf(s) === 'sleep').map((s) => s.id));
   const segEnd = (g: DaySegment) => g.endMs ?? Math.max(g.startMs, data.nowMs);
 
   // Segments clipped to the day.
@@ -228,7 +229,8 @@ export function daySummary(
     .map((g) => ({ ...g, s: Math.max(g.startMs, d0), e: Math.min(segEnd(g), d1) }))
     .filter((g) => g.e > g.s);
   const work = daySegs.filter((g) => kindOf.get(g.sessionId) !== 'break');
-  const brk = daySegs.filter((g) => kindOf.get(g.sessionId) === 'break');
+  // P105: Sleep is a break block that isn't break time.
+  const brk = daySegs.filter((g) => kindOf.get(g.sessionId) === 'break' && !sleeps.has(g.sessionId));
 
   const awayDay = data.away
     .map((a) => ({ ...a, s: Math.max(a.startMs, d0), e: Math.min(a.endMs, d1) }))
@@ -389,11 +391,11 @@ export function rated(sessions: Pick<SessionLine, 'tag' | 'efficiency' | 'daySec
   };
 }
 
-export type TimeSplitKey = 'work' | 'break' | 'gym' | 'food' | 'unanswered' | 'untracked';
+export type TimeSplitKey = 'work' | 'break' | 'gym' | 'food' | 'sleep' | 'unanswered' | 'untracked';
 
 /**
- * Where the day's time went (P68, P74): work blocks, breaks, gym, food, ended work blocks not accounted for,
- * untracked. Empty parts are dropped.
+ * Where the day's time went (P68, P74, P105): work blocks, breaks, gym, food, sleep, ended work blocks not accounted
+ * for, untracked. Empty parts are dropped.
  */
 export function timeSplit(s: Pick<DaySummary, 'workSec' | 'breakSec' | 'untrackedSec' | 'sessions'>): { key: TimeSplitKey; sec: number }[] {
   const unanswered = s.sessions.filter((x) => x.kind !== 'break' && x.name === null && !x.running).reduce((t, x) => t + x.daySec, 0);
@@ -405,6 +407,7 @@ export function timeSplit(s: Pick<DaySummary, 'workSec' | 'breakSec' | 'untracke
     { key: 'break', sec: s.breakSec - gym - food },
     { key: 'gym', sec: gym },
     { key: 'food', sec: food },
+    { key: 'sleep', sec: tagged('sleep') },
     { key: 'unanswered', sec: unanswered },
     { key: 'untracked', sec: s.untrackedSec },
   ];

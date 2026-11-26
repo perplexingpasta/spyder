@@ -325,6 +325,21 @@ describe('gym and food (P74)', () => {
   });
 });
 
+describe('sleep (P105)', () => {
+  it('is neither work nor break time, and gets its own slice of where the day went', () => {
+    const d = fixture();
+    const base = daySummary('2026-11-24', d, rules, S);
+    d.sessions.push({ ...ses('Z', 'break', 'Computer asleep or off', at(1), at(9)), tag: 'sleep' });
+    d.segments.push({ sessionId: 'Z', startMs: at(1), endMs: at(9) });
+    const s = daySummary('2026-11-24', d, rules, S);
+    expect(s.workSec).toBe(base.workSec);
+    expect(s.breakSec).toBe(base.breakSec);
+    expect(s.sessions.find((x) => x.id === 'Z')!.tag).toBe('sleep');
+    expect(timeSplit(s).find((p) => p.key === 'sleep')).toEqual({ key: 'sleep', sec: 8 * 3600 });
+    expect(timeSplit(s).find((p) => p.key === 'break')).toEqual(timeSplit(base).find((p) => p.key === 'break'));
+  });
+});
+
 describe('efficiency (P75)', () => {
   const data = (): DayData => ({
     window: { startMs: at(10), endMs: at(17) },

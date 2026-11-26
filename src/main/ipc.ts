@@ -116,9 +116,9 @@ export function registerIpc(ctx: AppCtx, host: EngineHost, hooks: IpcHooks): voi
   h('mergeRepeats', (date: string) => editor.mergeRepeats(date));
   h('unmergeBlock', (id: string) => editor.unmerge(id));
   h('fillUntracked', (startMs: number, endMs: number, answer: string | null, tag: Tag) =>
-    TAGS.includes(tag) ? editor.fill(startMs, endMs, answer, tag) : { error: 'invalid', message: 'Pick Work, Break, Gym or Food' },
+    TAGS.includes(tag) ? editor.fill(startMs, endMs, answer, tag) : { error: 'invalid', message: 'Pick Work, Break, Gym, Food or Sleep' },
   );
-  h('tagBlocks', (ids: string[], tag: Tag) => (TAGS.includes(tag) ? editor.tag(ids, tag) : { error: 'invalid', message: 'Pick Work, Break, Gym or Food' }));
+  h('tagBlocks', (ids: string[], tag: Tag) => (TAGS.includes(tag) ? editor.tag(ids, tag) : { error: 'invalid', message: 'Pick Work, Break, Gym, Food or Sleep' }));
   h('rateBlocks', (ids: string[], efficiency: Efficiency | null) =>
     efficiency === null || isEfficiency(efficiency) ? editor.rate(ids, efficiency) : { error: 'invalid', message: 'Pick 25, 50, 75 or 100%' },
   );

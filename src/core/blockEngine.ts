@@ -178,16 +178,26 @@ function sleep(r: Run, at: number): void {
 
 /**
  * P95: the work hours between `from` and `to` (Spyder asleep or off while the loop ran) become break blocks, one per
- * day, which the prompt asks about on return. Time outside work hours stays untracked.
+ * day, which the prompt asks about on return. Time outside work hours stays untracked, unless Settings asks about
+ * the whole day (P105): then it becomes Sleep blocks too, one for each stretch of a day outside its work hours.
  */
 function fillGap(r: Run, from: number, to: number): void {
+  const allDay = r.ctx.settings.asleepScope === 'all_day';
   for (let day = startOfDay(from); day < to; day = addDays(day, 1)) {
+    const next = addDays(day, 1);
     const w = r.ctx.window(day);
-    if (!w) continue;
-    const startMs = Math.max(from, w.startMs);
-    const endMs = Math.min(to, w.endMs);
-    if (endMs - startMs < GAP_MIN_MS) continue;
-    r.emit({ db: 'insertGapBlock', row: { id: r.ctx.newId(), segmentId: r.ctx.newId(), startMs, endMs, name: GAP_ANSWER, createdMs: r.now } });
+    const parts: { startMs: number; endMs: number; tag: 'break' | 'sleep' }[] = [];
+    if (w) parts.push({ startMs: w.startMs, endMs: w.endMs, tag: 'break' });
+    if (allDay) {
+      if (!w) parts.push({ startMs: day, endMs: next, tag: 'sleep' });
+      else parts.push({ startMs: day, endMs: w.startMs, tag: 'sleep' }, { startMs: w.endMs, endMs: next, tag: 'sleep' });
+    }
+    for (const p of parts.sort((a, b) => a.startMs - b.startMs)) {
+      const startMs = Math.max(from, p.startMs);
+      const endMs = Math.min(to, p.endMs);
+      if (endMs - startMs < GAP_MIN_MS) continue;
+      r.emit({ db: 'insertGapBlock', row: { id: r.ctx.newId(), segmentId: r.ctx.newId(), startMs, endMs, name: GAP_ANSWER, tag: p.tag, createdMs: r.now } });
+    }
   }
 }
 

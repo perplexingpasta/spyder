@@ -350,3 +350,67 @@ describe('time asleep or off becomes break blocks (P95)', () => {
     expect(gaps(r, r.fx)).toEqual([]);
   });
 });
+
+describe('asked about all day: time asleep or off outside work hours becomes Sleep (P105)', () => {
+  function on(at: number) {
+    const s = new Sim();
+    s.settings.trackFromStartup = true;
+    s.settings.asleepScope = 'all_day';
+    s.send({ type: 'BOOT', heartbeat: null }, at);
+    return s;
+  }
+  const gaps = (s: Sim, effects = s.log) =>
+    s.db('insertGapBlock', effects).map(({ startMs, endMs, name, tag }) => ({ startMs, endMs, name, tag }));
+
+  it('a night asleep is one Sleep block per day outside work hours; the work-hours parts stay breaks', () => {
+    const s = on(T(16));
+    s.send({ type: 'AWAY_BEGIN', atMs: T(16, 30), reason: 'suspend' }, T(16, 30));
+    s.send({ type: 'AWAY_END' }, T(11, 0, 0, 25));
+    expect(gaps(s)).toEqual([
+      { startMs: T(16, 30), endMs: T(17), name: GAP_ANSWER, tag: 'break' },
+      { startMs: T(17), endMs: T(0, 0, 0, 25), name: GAP_ANSWER, tag: 'sleep' },
+      { startMs: T(0, 0, 0, 25), endMs: T(10, 0, 0, 25), name: GAP_ANSWER, tag: 'sleep' },
+      { startMs: T(10, 0, 0, 25), endMs: T(11, 0, 0, 25), name: GAP_ANSWER, tag: 'break' },
+    ]);
+    expect(s.state.loop!.block.startedMs).toBe(T(11, 0, 0, 25));
+  });
+
+  it('a sleep just after midnight, outside work hours, becomes Sleep', () => {
+    const s = on(T(23, 50));
+    s.send({ type: 'AWAY_BEGIN', atMs: T(0, 0, 0, 25), reason: 'suspend' }, T(0, 0, 0, 25));
+    s.send({ type: 'AWAY_END' }, T(0, 43, 0, 25));
+    expect(gaps(s)).toEqual([{ startMs: T(0, 0, 0, 25), endMs: T(0, 43, 0, 25), name: GAP_ANSWER, tag: 'sleep' }]);
+  });
+
+  it('days off are filled whole, one Sleep block each', () => {
+    const s = on(T(16, 0, 0, 27)); // Friday afternoon to Monday morning
+    s.send({ type: 'AWAY_BEGIN', atMs: T(17, 0, 0, 27), reason: 'suspend' }, T(17, 0, 0, 27));
+    s.send({ type: 'AWAY_END' }, T(9, 0, 0, 30));
+    expect(gaps(s)).toEqual([
+      { startMs: T(17, 0, 0, 27), endMs: T(0, 0, 0, 28), name: GAP_ANSWER, tag: 'sleep' },
+      { startMs: T(0, 0, 0, 28), endMs: T(0, 0, 0, 29), name: GAP_ANSWER, tag: 'sleep' },
+      { startMs: T(0, 0, 0, 29), endMs: T(0, 0, 0, 30), name: GAP_ANSWER, tag: 'sleep' },
+      { startMs: T(0, 0, 0, 30), endMs: T(9, 0, 0, 30), name: GAP_ANSWER, tag: 'sleep' },
+    ]);
+  });
+
+  it('Spyder off overnight is filled the same way on launch', () => {
+    const s = on(T(16));
+    const r = new Sim();
+    r.settings.trackFromStartup = true;
+    r.settings.asleepScope = 'all_day';
+    r.send({ type: 'BOOT', heartbeat: { tsMs: T(3, 30, 0, 25), state: structuredClone(s.state) } }, T(11, 0, 0, 25));
+    expect(gaps(r, r.fx)).toEqual([
+      { startMs: T(3, 30, 0, 25), endMs: T(10, 0, 0, 25), name: GAP_ANSWER, tag: 'sleep' },
+      { startMs: T(10, 0, 0, 25), endMs: T(11, 0, 0, 25), name: GAP_ANSWER, tag: 'break' },
+    ]);
+  });
+
+  it('nothing is filled when the loop wasn’t running', () => {
+    const s = booted(T(10, 7));
+    const r = new Sim();
+    r.settings.asleepScope = 'all_day';
+    r.send({ type: 'BOOT', heartbeat: { tsMs: T(10, 30), state: structuredClone(s.state) } }, T(12));
+    expect(gaps(r, r.fx)).toEqual([]);
+  });
+});

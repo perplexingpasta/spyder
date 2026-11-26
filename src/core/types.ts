@@ -3,12 +3,13 @@ import type { Settings } from './settings';
 
 export type Kind = 'planned' | 'timed' | 'open' | 'break';
 /**
- * P66, P74: a block's tag, apart from its answer. Work is kind 'open'; Break, Gym and Food are kind 'break' (they
- * count as break time), with Gym and Food named in `sessions.tag`.
+ * P66, P74, P105: a block's tag, apart from its answer. Work is kind 'open'; Break, Gym, Food and Sleep are kind
+ * 'break', with Gym, Food and Sleep named in `sessions.tag`. Gym and Food count as break time; Sleep counts as
+ * neither work nor break.
  */
-export type Tag = 'work' | 'break' | 'gym' | 'food';
-export const TAGS: Tag[] = ['work', 'break', 'gym', 'food'];
-export const TAG_LABEL: Record<Tag, string> = { work: 'Work', break: 'Break', gym: 'Gym', food: 'Food' };
+export type Tag = 'work' | 'break' | 'gym' | 'food' | 'sleep';
+export const TAGS: Tag[] = ['work', 'break', 'gym', 'food', 'sleep'];
+export const TAG_LABEL: Record<Tag, string> = { work: 'Work', break: 'Break', gym: 'Gym', food: 'Food', sleep: 'Sleep' };
 /** A block's tag from its stored kind and `sessions.tag`. */
 export const tagOf = (x: { kind: string; tag?: string | null }): Tag => (x.kind === 'break' ? ((x.tag as Tag | null | undefined) ?? 'break') : 'work');
 /** P75: the user's own rating of a work block, picked in the prompt or on Today. */
@@ -58,7 +59,7 @@ export interface WorkWindow {
   endMs: number;
 }
 
-export type EngineSettings = Pick<Settings, 'blockLengthSec' | 'keepWorkingStepMin' | 'trackFromStartup' | 'barPercent'>;
+export type EngineSettings = Pick<Settings, 'blockLengthSec' | 'keepWorkingStepMin' | 'trackFromStartup' | 'barPercent' | 'asleepScope'>;
 
 export interface Ctx {
   now: number;
@@ -120,6 +121,8 @@ export interface GapBlockRow {
   startMs: number;
   endMs: number;
   name: string;
+  /** P105: Sleep outside work hours under `asleepScope` All day; a plain break otherwise. */
+  tag: 'break' | 'sleep';
   createdMs: number;
 }
 export interface AwayInsertRow {

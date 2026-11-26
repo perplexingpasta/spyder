@@ -55,6 +55,17 @@ export function Settings() {
                   onChange={(v) => void set({ trackFromStartup: v })}
                 />
               </Field>
+              <Field label="Ask about time asleep or off" hint="while blocks ran; outside work hours it becomes Sleep">
+                <Segmented
+                  testId="set-asleepScope"
+                  value={s.asleepScope}
+                  options={[
+                    { value: 'work_hours', label: 'Work hours' },
+                    { value: 'all_day', label: 'All day' },
+                  ]}
+                  onChange={(v) => void set({ asleepScope: v })}
+                />
+              </Field>
               <div className="grid grid-cols-2 gap-x-6">
                 <Field label="Away after idle" hint="shown as a hint">
                   <NumberInput
@@ -201,6 +212,7 @@ export function Settings() {
                   ['workColor', 'Work colour', 'for work blocks'],
                   ['gymColor', 'Gym colour', 'for gym blocks'],
                   ['foodColor', 'Food colour', 'for food blocks'],
+                  ['sleepColor', 'Sleep colour', 'for sleep blocks'],
                 ] as const
               ).map(([key, label, hint]) => (
                 <Field key={key} label={label} hint={hint}>

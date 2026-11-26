@@ -28,6 +28,7 @@ The bar follows Rize's desktop widget (P23, P43). The dashboard is Linear/Vercel
 | `--color-green` | `#3FB27F` | `#1F9D63` | goal met |
 | `--color-open` / `break` | | | block states (see `styles.css`) |
 | `--color-gym` / `food` | `#E8853D` / `#D9669B` | same | P74 Gym and Food blocks; Settings can change both |
+| `--color-sleep` | `#6C71C4` | same | P105 Sleep blocks; Settings can change it |
 | `--color-work` | `#3FB27F` | `#3FB27F` | work blocks (P67); replaced at runtime by the Settings pick |
 | `--color-away` | | | start reminder, Week chart |
 | `--color-planned` / `timed` | | | spare series colours (Month KPI lines) |
