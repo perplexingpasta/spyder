@@ -172,6 +172,14 @@ One entry under "Today's wins" in a review.
 **Improvement**:
 One entry under "How I'll improve" in a review.
 
+**Gadget row**:
+One line on the gadget: a copy of an improvement, imported from its review or saved since, or written straight on the gadget. It keeps its own text, tick and colour label, and changing it never changes the review it came from. Its date is the review's day, or the day it was written on the gadget.
+_Avoid_: improvement (that's the review's entry), item, goal
+
+**Ticked** (gadget row):
+A gadget row the user has marked done. It shows struck through below the fresh rows and stays until the user removes it.
+_Avoid_: done, completed, dismissed
+
 **Midnight card**:
 The prompt that, once a day ends, asks for that day's wins and improvements (P98). Saved or skipped, a day isn't asked about again.
 _Avoid_: reflection (only the table name), journal
@@ -185,6 +193,10 @@ _Avoid_: metric, stat
 **Widget**:
 The small always-on-top bar showing the current block's timer, today's productive time and either the workday % or the goal %, whichever the user chose. It only displays; Start, Stop and the block length live in the dashboard.
 _Avoid_: overlay, HUD, timer window
+
+**Gadget**:
+The "How I'll improve" window that lives on the desktop, below every app, and holds the gadget rows. Its minimize sends it to the tray.
+_Avoid_: widget (that's the bar), sticky note
 
 **Prompt**:
 A question Spyder puts to the user (account for blocks, start reminder). Only one is shown at a time; the rest wait in a queue.

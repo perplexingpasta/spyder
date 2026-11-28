@@ -75,6 +75,30 @@ Modelled on the real Rize widget (described in `design/reference/INDEX.md`): a f
 - **Drag handle** (24 px, `surface-2` tint, ⋮⋮ grip, `cursor: move`) at the far right. Everything except the two buttons drags.
 - Red border when distracted, which also tints the fill red and pulses once. No sound anywhere (P60).
 
+## 2b. Gadget (`#/gadget`, P107)
+
+"How I'll improve" on the desktop: never above an app, still there on Show desktop (ADR-0012). It's an acrylic glass window like the prompt: the whole window is the smoke-tinted frame (`sidebar` at the Glass tint, P89/P90), and Windows draws the rounded corners and the shadow. It's resizable (min 260 × 160) and starts at **340 × 420**, 24 px in from the top right of the primary display's work area. Size and place are remembered.
+```
+ ╭────────────────────────────────────────╮
+ │ HOW I'LL IMPROVE        [+] [⇩] [✓̶] [–] │  ← header 36 px, drags; caps muted title; 28 px ghost icon buttons
+ ├────────────────────────────────────────┤
+ │ ☐  Sleep before midnight         Nov 27 │  ← fresh rows, newest date first
+ │ ☐  Plan tomorrow the evening     Nov 27 │
+ │    before, in writing                   │  ← text wraps; the date stays on the first line
+ │ ☐  Take the stairs               Nov 24 │  ← tinted row (colour label)
+ │ ☑  ̶W̶a̶l̶k̶ ̶a̶f̶t̶e̶r̶ ̶l̶u̶n̶c̶h̶            Nov 20 │  ← ticked: struck through, muted, below the fresh rows
+ ╰────────────────────────────────────────╯
+```
+- **Header** (36 px, the drag area, no border, 12 px side padding): the caps `HOW I'LL IMPROVE` in muted on the left. On the right, 28 px ghost icon buttons (muted, `text` on hover, `surface-2` hover fill, radius control) with tooltips: **+** `Add` (plus), **Import** (tray-arrow-down), **Clear ticked** (a check with a strike, shown only with ticked rows) and **Minimize** (`–`, `Minimize to the tray`). The buttons don't drag.
+- **Rows** (13 px `text`, 6 px × 12 px padding, radius control, 2 px apart, in a scroll area under the header with 8 px side margins): a 16 px checkbox (radius chip, 1.5 px `border-strong` outline; ticked = `accent` fill with an `on-accent` check), 10 px gap, then the text, which wraps (long words break) and takes the free width. The date is 12 px `faint` tabular at the far right on the first line. On hover, two 20 px ghost controls appear just left of the date: a colour dot (opens the colour menu) and an `×` (Remove). The row gets a `surface-2`/50 % fill on hover when it has no colour.
+- **Ticked rows**: the text is struck through in `muted`, the date is `faint`, and the tint drops to half strength. No divider separates them from the fresh rows.
+- **Editing**: clicking the text turns it into a borderless auto-growing field of the same size (`surface` 60 % fill, 1 px `accent` 40 % outline, radius chip). The new row from + looks the same, with a `faint` placeholder `How will you improve?`.
+- **Colour labels**: red, orange, yellow, green, blue or purple. The tint is `color-mix(label 16 %, transparent)` on the row, with a 3 px left edge in the full colour. The menu (right-click or the hover dot) is a `surface` popover (`shadow-pop`, radius control, 6 px padding) holding seven 18 px swatches in a line, the last one `None` (a slashed circle). The current one has a 2 px `text` ring. The label tokens are `--color-label-<name>` in `styles.css`, stepped for light and dark like the app colours.
+- **Undo** after ×: a 32 px bar at the bottom of the window (`surface`, `shadow-pop`, 12 px) reading `Removed · Undo` (Undo in `accent`) for 5 s.
+- **Clear ticked confirm**: the same bar reads `Remove 3 ticked rows?` with `Remove` (red text) and `Cancel`.
+- **Empty**: centred 13 px muted `Nothing to improve yet`, and under it a 12 px faint `+ to write one, or Import from a past review`.
+- **Import** replaces the rows, keeping the header, which now has a back arrow and the title `IMPORT`. It lists days newest first. Each day has a caps date line (`THU, NOV 27`) with an `All` checkbox on the right, then its improvements as rows with checkboxes. Ones already on the gadget are `faint` with `added` in place of the checkbox. A sticky footer has a primary pill `Import 4` (disabled at 0) and a ghost `Cancel`. With no past improvements: muted `No past improvements yet`.
+
 ## 3. Prompt window (`#/prompt`)
 
 420 px wide, height = content (main resizes to the content's height). Acrylic glass window (P87): Windows draws the rounded corners and shadow. Like the dashboard (P92): the whole window is the smoke-tinted glass frame (`sidebar` at the Glass tint, P89/P90), and inside it, 8 px in, sits the content card (12 px radius, 97 % solid `bg`, the dashboard content card's shadow, 20 px padding) with plain controls. Styled like the reference popover card (`rize-autotag-example.png` in `design/reference/INDEX.md`). It pops on top when it appears and again whenever another block ends (P60); it never closes on Esc.
@@ -166,4 +190,5 @@ Toggles: 32 × 18 track, `surface-2` off / `accent` on, white 14 px knob.
 
 ## 6. Tray & icon
 - Icon (P91): a spider web, dark outline with slate-blue fill (`resources/icon.png`, 256 px, transparent; edit the PNG directly). Tray uses the PNG resized to 16/32; electron-builder makes the .ico.
+- Tray menu: `Show widget`, `Show How I'll improve` (only while the gadget is on in Settings, P107), `Open dashboard`, then Start/Stop, then `Quit`.
 - Notifications (nudge toast) use the system toast; title `Spyder`, body per plan §8.

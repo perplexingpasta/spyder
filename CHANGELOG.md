@@ -7,6 +7,17 @@ changed default, a migration, a new setting or a test-helper change. The full re
 
 Add an entry in the same commit as the change (see AGENTS.md → Commits).
 
+## 2026-11-28: The "How I'll improve" gadget is specified, not built yet (P107)
+
+**What**
+- Docs only. P107 specifies a desktop gadget that holds "How I'll improve" rows. ADR-0012 (proposed) covers how it stays on the desktop. DESIGN §2b covers its look, and `CONTEXT.md` adds Gadget, Gadget row and Ticked. `docs/plans/p107-gadget.md` is the phased build plan.
+
+**Why**
+The user wants one place where they always see how they'll improve, without it ever covering their apps.
+
+**If you pull this**
+- Nothing special. No code has changed yet.
+
 ## 2026-11-28: Sleep is beige (P106)
 
 **What**
