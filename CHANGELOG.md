@@ -7,6 +7,17 @@ changed default, a migration, a new setting or a test-helper change. The full re
 
 Add an entry in the same commit as the change (see AGENTS.md → Commits).
 
+## 2026-11-28: Sleep is beige (P106)
+
+**What**
+- The Sleep tag's default colour is beige (`#e8dcc4`) instead of indigo.
+
+**Why**
+The user wants Sleep in cream/white/beige.
+
+**If you pull this**
+- Migration 010 changes a saved `sleepColor` of `#6c71c4` (the old default) to `#e8dcc4`; a colour you picked yourself stays.
+
 ## 2026-11-27: Ask about time asleep or off all day; the Sleep tag (P105)
 
 **What**

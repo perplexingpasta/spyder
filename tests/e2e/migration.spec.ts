@@ -60,3 +60,18 @@ test('old sessions become one block each; away periods become blocks or untracke
     await s.close();
   }
 });
+
+test('the old indigo Sleep default becomes beige; a picked colour stays (P106)', () => {
+  const migrations = loadMigrationsFromDisk(join(ROOT, 'src/main/db/migrations'));
+  const run = (stored: string) => {
+    const db = new Db(join(freshDataDir(), 'spyder.db'));
+    migrate(db, migrations.filter((m) => m.version <= 9), T(9));
+    db.run("INSERT INTO settings (key, value) VALUES ('sleepColor', ?)", JSON.stringify(stored));
+    migrate(db, migrations, T(9));
+    const v = db.get<{ value: string }>("SELECT value FROM settings WHERE key = 'sleepColor'")!.value;
+    db.close();
+    return JSON.parse(v) as string;
+  };
+  expect(run('#6c71c4')).toBe('#e8dcc4');
+  expect(run('#123456')).toBe('#123456');
+});

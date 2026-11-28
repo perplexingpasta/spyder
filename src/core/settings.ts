@@ -58,7 +58,7 @@ export const DEFAULT_SETTINGS: Settings = {
   workColor: '#3fb27f',
   gymColor: '#e8853d',
   foodColor: '#d9669b',
-  sleepColor: '#6c71c4',
+  sleepColor: '#e8dcc4',
   trackFromStartup: true,
   barPercent: 'goal',
   font: 'system',

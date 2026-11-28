@@ -8,6 +8,7 @@ import merges from './006_merges.sql?raw';
 import reflections from './007_reflections.sql?raw';
 import appPaths from './008_app_paths.sql?raw';
 import sleepTag from './009_sleep_tag.sql?raw';
+import sleepBeige from './010_sleep_beige.sql?raw';
 import type { Migration } from '../migrate';
 
 export const MIGRATIONS: Migration[] = [
@@ -20,4 +21,5 @@ export const MIGRATIONS: Migration[] = [
   { version: 7, sql: reflections },
   { version: 8, sql: appPaths },
   { version: 9, sql: sleepTag },
+  { version: 10, sql: sleepBeige },
 ];
