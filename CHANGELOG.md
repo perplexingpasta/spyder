@@ -7,6 +7,23 @@ changed default, a migration, a new setting or a test-helper change. The full re
 
 Add an entry in the same commit as the change (see AGENTS.md → Commits).
 
+## 2026-11-28: The "How I'll improve" gadget on the desktop (P107)
+
+**What**
+- A new window, the **gadget**, sits on the desktop: never above an app, still there on Show desktop (Win+D). It holds **gadget rows**: a checkbox, the text (wraps), and the row's date on the far right.
+- **+** writes a row dated today; click a row's text to edit it; tick it to strike it through and move it below the fresh rows; right-click (or the hover dot) for a colour label; × removes it with Undo; **Clear ticked** removes every ticked row after a confirm.
+- Every improvement saved from now on (Review page or midnight card) is added by itself. **Import** picks improvements from past reviews. The same day and text is never added twice.
+- Minimize sends it to the tray (`Show How I'll improve`). Settings → Goal → **How I'll improve gadget** turns it off; improvements keep collecting meanwhile.
+
+**Why**
+The user wants one place where they always see how they'll improve, without it ever covering their apps.
+
+**If you pull this**
+- Migration 011 adds `gadget_rows` and fills it with the last day that has improvements.
+- New settings keys: `gadget` (on), `gadgetHidden` (false) and `gadgetBounds` (null).
+- `UrlHelper.exe` has a new `desktop` mode: run `npm run build:helper`. Without it the gadget is an ordinary window (not on top, hidden by Win+D).
+- e2e: every launch has a fourth window (`#/gadget`); `security.spec.ts` expects 4 windows, `smoke.spec.ts` expects the new tray item. New debug hook `trayClick(label)`.
+
 ## 2026-11-28: The "How I'll improve" gadget is specified, not built yet (P107)
 
 **What**

@@ -22,7 +22,7 @@ test('every window is sandboxed with context isolation', async () => {
       return { sandbox: p.sandbox, contextIsolation: p.contextIsolation, nodeIntegration: p.nodeIntegration };
     }),
   );
-  expect(prefs).toHaveLength(3);
+  expect(prefs).toHaveLength(4); // the bar, the dashboard, the prompt and the gadget (P107)
   for (const p of prefs) expect(p).toEqual({ sandbox: true, contextIsolation: true, nodeIntegration: false });
 });
 

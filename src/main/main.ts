@@ -20,7 +20,7 @@ import { isAppUrl } from './paths';
 import { loadSettings } from './settings';
 import { applyTheme } from './theme';
 import { createTray } from './tray';
-import { createDashboard, createPrompt, createWidget, QUIET, showWidget } from './windows';
+import { applyGadget, createDashboard, createPrompt, createWidget, QUIET, showWidget } from './windows';
 
 // Must happen before whenReady (plan §3).
 app.setName('Spyder');
@@ -71,6 +71,7 @@ async function boot(): Promise<void> {
     widget: null,
     dashboard: null,
     prompt: null,
+    gadget: null,
     tray: null,
     hotkeyOk: false,
   };
@@ -114,6 +115,7 @@ async function boot(): Promise<void> {
   ctx.widget = createWidget(ctx);
   ctx.dashboard = createDashboard(ctx);
   ctx.prompt = createPrompt(ctx);
+  applyGadget(ctx); // P107
   ctx.tray = createTray(ctx, {
     toggleLoop: () => (host.state.loop ? host.dispatch({ type: 'STOP' }) : host.start(ctx.settings.blockLengthSec)),
     loopLabel: () => (host.state.loop ? 'Stop' : 'Start'),

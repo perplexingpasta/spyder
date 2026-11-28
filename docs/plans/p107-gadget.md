@@ -2,6 +2,8 @@
 
 **Behaviour:** `docs/product-decisions.md` P107. **Window mechanism:** `docs/adr/0012-gadget-owned-by-the-desktop.md` (proposed until phase 1 passes). **Look:** `design/DESIGN.md` §2b. **Terms:** `CONTEXT.md` (Gadget, Gadget row, Ticked).
 
+**Status:** built 2026-11-28 (phases 0–9 done; results of phases 1 and 8 below and in ADR-0012).
+
 This plan says *how* and *in what order*. Where it and P107 disagree, P107 wins. Each phase ends green on `npm run typecheck`, `npm run lint` and `npm test`. Phases that touch windows or the renderer also run `npm run test:e2e`. No phase starts before the previous one is verified.
 
 ---
@@ -222,6 +224,18 @@ With the user's OK (given 2026-11-28), on a throwaway data dir (`SPYDER_DATA_DIR
 - One commit on `main`: `feat: the "How I'll improve" gadget on the desktop (P107)`, with the body per AGENTS.md. Don't push.
 
 ---
+
+## Phase 8 result (2026-11-28)
+
+The built app on the real desktop (a throwaway data dir, driven by a scratch Playwright script plus `WindowFromPoint` checks):
+- It appeared 24 px in from the top right, owned by Progman (`desktop` exit 0), and a maximised app covered it.
+- Win+D left it showing; a second Win+D put the apps back over it.
+- Clicked on the desktop, + took the typing: Enter saved `Typed here`, dated today, and Esc closed the next draft.
+- After Win+D with one window restored over it, clicking the gadget focused it without raising it over that window, twice in a row.
+- Moved and resized to 400 × 300 at (200, 150), it came back there after a relaunch.
+- Minimize hid it; the tray's `Show How I'll improve` brought it back and handed it to the desktop again.
+- After an Explorer restart its owner was gone for a moment; within 37 s it was owned by the new Progman, and Win+D left it showing.
+- The installed Spyder bar sat over the gadget's header at the default place and took clicks there: expected, the bar is always on top.
 
 ## Answered by the user (2026-11-28)
 

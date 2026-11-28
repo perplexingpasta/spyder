@@ -7,7 +7,7 @@ import { launch, shot, type Launched } from './helpers';
 const TABLES = [
   'schema_migrations', 'projects', 'sessions', 'segments', 'away_periods', 'activity', 'distraction_flags',
   'rules', 'title_patterns', 'schedule', 'day_overrides', 'reviews', 'review_items', 'kpis', 'kpi_values',
-  'settings', 'heartbeat',
+  'settings', 'heartbeat', 'gadget_rows',
 ];
 
 let s: Launched;
@@ -29,7 +29,7 @@ test('widget and dashboard windows exist', async () => {
 test('tray exists', async () => {
   const t = await s.debug.trayInfo();
   expect(t.exists).toBe(true);
-  expect(t.menu).toEqual(['Show widget', 'Open dashboard', 'Start', 'Quit']);
+  expect(t.menu).toEqual(['Show widget', "Show How I'll improve", 'Open dashboard', 'Start', 'Quit']);
 });
 
 test('every table exists', async () => {

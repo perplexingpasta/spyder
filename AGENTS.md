@@ -17,8 +17,8 @@ Each one owns its own subject. Update the owner, and point to it from elsewhere.
 - `src/core/`: **pure** logic. The block engine (`blockEngine.ts`) is a reducer `reduce(state, event, ctx) → { state, effects }`. It also holds schedule, nudge, categorize, title patterns, aggregation, streaks, trends, CSV, and the view models (`widgetView`, `promptView`). Unit-tested with Vitest next to each file.
 - `src/main/`: the Electron main process. `engineHost.ts` owns engine state, runs the tick and carries out effects. `idle.ts` turns powerMonitor into away events. `capture/` + `tracker.ts` sample the foreground app every 2 s. `db/` is `node:sqlite`, `report.ts` builds the dashboard data, `export.ts` writes xlsx/CSV, and `debug.ts` holds the test hooks.
 - `src/preload/`: `window.spyder`, the only bridge from renderer to main (`api.d.ts` is the contract).
-- `src/renderer/`: one bundle, routed by URL hash: `#/widget`, `#/prompt`, `#/dashboard/<page>/<date?>`.
-- `src/native/UrlHelper.cs`: reads Chrome's address bar over UI Automation (ADR-0008).
+- `src/renderer/`: one bundle, routed by URL hash: `#/widget`, `#/prompt`, `#/gadget`, `#/dashboard/<page>/<date?>`.
+- `src/native/UrlHelper.cs`: reads Chrome's address bar over UI Automation (ADR-0008), plus one-shot window modes: `focus` (P71), `back` (P83) and `desktop` (P107, ADR-0012).
 - `tests/e2e/`: Playwright against the built Electron app. `helpers.ts` `launch()` gives you a fresh data dir, a fake clock and the debug API.
 
 ## Invariants
@@ -59,6 +59,7 @@ The e2e helper also sets `SPYDER_CAPTURE=0` and `SPYDER_FAKE_IDLE=1`, so the rea
 - One instance per data dir. A second launch against the same dir exits silently.
 - `resources/UrlHelper.exe` is gitignored. Run `npm run build:helper` before testing Chrome site capture or `npm run dist`.
 - Run `scripts/capture-check.ts` from PowerShell. The Store version of Notepad won't launch from Git Bash.
+- The gadget (P107, `#/gadget`) is not a widget. It's a desktop window that `UrlHelper.exe desktop` hands to Progman, so it's never above an app and survives Win+D (ADR-0012). e2e (QUIET) skips that step, so check window behaviour on the real desktop.
 - The bar is the only widget (P50). Start, Stop and the block length are in the dashboard sidebar; e2e tests start the loop from there (`startFromSidebar` in `widget.spec.ts`) or from the start reminder.
 - The e2e clock can't be frozen: at scale 1 it runs in real time, so a block started "at 11:00" starts a few hundred ms later. Assert block times relative to `loop.block.startedMs`, not exact clock times.
 - Playwright's Electron launcher forces a light `prefers-color-scheme` unless `colorScheme: null` is passed (`exeLaunch` in `tests/e2e/helpers.ts` does). Without it the app's theme (P57) can't be tested and every screenshot renders light.

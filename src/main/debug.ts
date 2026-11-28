@@ -3,7 +3,8 @@ import { ipcMain } from 'electron';
 import type { AppCtx } from './context';
 import { hotkeyHandler } from './hotkey';
 import { isAppUrl } from './paths';
-import { trayInfo } from './tray';
+import { trayClick, trayInfo } from './tray';
+import { gadgetDesktop } from './windows';
 
 export type DebugHandler = (...args: never[]) => unknown;
 
@@ -32,11 +33,14 @@ export function registerDebug(ctx: AppCtx): void {
       widgetVisible: !!ctx.widget?.isVisible(),
       widgetOnTop: !!ctx.widget?.isAlwaysOnTop(),
       dashboardVisible: !!ctx.dashboard?.isVisible(),
+      gadgetVisible: !!ctx.gadget && !ctx.gadget.isDestroyed() && ctx.gadget.isVisible(),
+      gadgetDesktop,
     };
     for (const [k, fn] of stateParts) out[k] = fn();
     return out;
   });
   addDebugHook('trayInfo', () => trayInfo(ctx));
+  addDebugHook('trayClick', (label: string) => trayClick(ctx, label));
   addDebugHook('setNow', (ms: number) => ctx.clock.setNow(ms));
   addDebugHook('advance', (sec: number) => ctx.clock.advance(sec));
   addDebugHook('triggerHotkey', () => hotkeyHandler(ctx));

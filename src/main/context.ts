@@ -14,6 +14,8 @@ export interface AppCtx {
   widget: BrowserWindow | null;
   dashboard: BrowserWindow | null;
   prompt: BrowserWindow | null;
+  /** P107: the How I'll improve gadget; created the first time it's shown. */
+  gadget: BrowserWindow | null;
   tray: Tray | null;
   hotkeyOk: boolean;
 }

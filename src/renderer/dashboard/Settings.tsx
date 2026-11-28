@@ -133,6 +133,9 @@ export function Settings() {
               <Field label="Ask about the day at midnight" hint="wins and how you'll improve, for the day that ended">
                 <Toggle testId="set-askReflection" label="Ask about the day at midnight" on={s.askReflection} onChange={(v) => void set({ askReflection: v })} />
               </Field>
+              <Field label="How I'll improve gadget" hint="on your desktop, never over your apps">
+                <Toggle testId="set-gadget" label="How I'll improve gadget" on={s.gadget} onChange={(v) => void set({ gadget: v })} />
+              </Field>
             </Card>
             <Card title="Look">
               <Field label="Theme">

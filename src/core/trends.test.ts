@@ -146,6 +146,20 @@ describe('cleanSettings', () => {
     expect(cleanSettings({ workColor: 42 })).toEqual({});
   });
 
+  it('P107: the gadget is on and shown by default; its bounds are four numbers at least the minimum size, or null', () => {
+    expect(DEFAULT_SETTINGS.gadget).toBe(true);
+    expect(DEFAULT_SETTINGS.gadgetHidden).toBe(false);
+    expect(DEFAULT_SETTINGS.gadgetBounds).toBeNull();
+    expect(cleanSettings({ gadget: false, gadgetHidden: true })).toEqual({ gadget: false, gadgetHidden: true });
+    expect(cleanSettings({ gadgetBounds: { x: -10.4, y: 20, width: 340, height: 420 } })).toEqual({ gadgetBounds: { x: -10, y: 20, width: 340, height: 420 } });
+    expect(cleanSettings({ gadgetBounds: null })).toEqual({ gadgetBounds: null });
+    expect(cleanSettings({ gadgetBounds: { x: 0, y: 0, width: 100, height: 420 } })).toEqual({});
+    expect(cleanSettings({ gadgetBounds: { x: 0, y: 0, width: 340, height: 159 } })).toEqual({});
+    expect(cleanSettings({ gadgetBounds: { x: NaN, y: 0, width: 340, height: 420 } })).toEqual({});
+    expect(cleanSettings({ gadgetBounds: { x: 0, y: 0 } })).toEqual({});
+    expect(cleanSettings({ gadgetBounds: 'big' })).toEqual({});
+  });
+
   it('P78: the font is System or Atkinson Hyperlegible', () => {
     expect(DEFAULT_SETTINGS.font).toBe('system');
     expect(cleanSettings({ font: 'atkinson' })).toEqual({ font: 'atkinson' });

@@ -38,5 +38,5 @@ export async function applyStyleTo(ctx: AppCtx, win: BrowserWindow | null): Prom
 }
 
 export function applyStyle(ctx: AppCtx): void {
-  for (const w of [ctx.widget, ctx.prompt, ctx.dashboard]) void applyStyleTo(ctx, w);
+  for (const w of [ctx.widget, ctx.prompt, ctx.dashboard, ctx.gadget]) void applyStyleTo(ctx, w);
 }

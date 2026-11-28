@@ -3,6 +3,7 @@
 import { randomUUID } from 'node:crypto';
 import { dateKey, startOfDay } from '../core/schedule';
 import type { Db } from './db/db';
+import { autoAdd } from './gadget';
 
 export interface ReflectDay {
   date: string;
@@ -52,6 +53,7 @@ export function saveReflection(db: Db, date: string, lists: { win: string[]; imp
           db.run('INSERT INTO review_items (id, date, kind, text, sort, created_ms) VALUES (?, ?, ?, ?, ?, ?)', randomUUID(), date, kind, text, sort, nowMs),
         );
       }
+      autoAdd(db, date, lists.improve.map((text, sort) => ({ text, sort })), nowMs); // P107
     }
     db.run('INSERT INTO reflections (date, done_ms) VALUES (?, ?) ON CONFLICT(date) DO UPDATE SET done_ms = excluded.done_ms', date, nowMs);
   });

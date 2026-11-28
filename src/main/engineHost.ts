@@ -10,10 +10,11 @@ import { accountView, improvesView, reflectView, reminderView, type ImprovesVM, 
 import { addDays, dateKey, mergeOverride, minutesOfDay, startOfDay, workWindow, type DayOverride } from '../core/schedule';
 import type { ScheduleRow } from '../core/settings';
 import { isEfficiency, TAGS, tagOf, type Ctx, type Effect, type EngineError, type EngineEvent, type EngineState, type Tag } from '../core/types';
-import type { WidgetPayload } from '../preload/api';
+import type { GadgetPayload, WidgetPayload } from '../preload/api';
 import type { AppCtx } from './context';
 import * as repo from './db/repo';
 import { toast } from './notify';
+import { listRows } from './gadget';
 import { listToAsk, refreshReview, summaryFor } from './report';
 import { answeredToday, lastDay, reflectDay, saveReflection, type ReflectDay } from './reflect';
 import { saveSettings, loadSettings } from './settings';
@@ -50,6 +51,10 @@ export class EngineHost {
   private lastWidget = '';
   private lastPrompt = '';
   private lastPendingCount = 0;
+  /** P107: the gadget's rows are re-read after a change and when the day changes (its date labels follow today). */
+  private gadgetDirty = true;
+  private gadgetDay = '';
+  private lastGadget = '';
   private timer: NodeJS.Timeout | undefined;
   private readonly app: AppCtx;
 
@@ -223,7 +228,18 @@ export class EngineHost {
   dataChanged(): void {
     this.productiveCache.atMs = Number.NaN;
     this.pendingDirty = true;
+    this.gadgetDirty = true;
     this.push();
+  }
+
+  /** P107: the gadget's rows changed. */
+  gadgetChanged(): void {
+    this.gadgetDirty = true;
+    this.push();
+  }
+
+  gadget(): GadgetPayload {
+    return { rows: listRows(this.app.db), today: dateKey(this.app.clock.now()) };
   }
 
   // ---- view models ---------------------------------------------------------------------
@@ -314,6 +330,18 @@ export class EngineHost {
       }
       const status = w.running ? `Block ${fmtClock(w.timerSec)}` : w.notStarted ? 'Not started' : 'Off hours';
       setTrayTooltip(this.app, `Spyder — ${status}`);
+    }
+    const today = dateKey(this.app.clock.now());
+    if (this.gadgetDirty || today !== this.gadgetDay) {
+      this.gadgetDirty = false;
+      this.gadgetDay = today;
+      const g = this.gadget();
+      const gj = JSON.stringify(g);
+      const win = this.app.gadget;
+      if (gj !== this.lastGadget && win && !win.isDestroyed()) {
+        this.lastGadget = gj;
+        win.webContents.send('spyder:gadget', g);
+      }
     }
     const p = this.promptState();
     const pj = JSON.stringify(p);

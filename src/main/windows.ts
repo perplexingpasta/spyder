@@ -2,6 +2,7 @@ import { BrowserWindow, screen } from 'electron';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { GADGET_DEFAULT, GADGET_MIN } from '../core/gadget';
 import { helperPath } from './capture/chromeUrl';
 import type { AppCtx } from './context';
 import { rendererUrl } from './paths';
@@ -232,10 +233,17 @@ export function minimizeWidget(ctx: AppCtx): void {
 
 /** The helper puts the window at the bottom of the z-order; Electron has no API for it (ADR-0008). */
 function sendToBack(win: BrowserWindow): void {
+  helper(win, 'back');
+}
+
+/** Runs a one-shot helper mode on the window; the exit code, or null when the helper isn't there. */
+function helper(win: BrowserWindow, mode: 'back' | 'desktop', done?: (code: number | null) => void): void {
   const exe = helperPath();
-  if (process.platform !== 'win32' || !existsSync(exe)) return;
+  if (process.platform !== 'win32' || !existsSync(exe) || win.isDestroyed()) return done?.(null);
   const hwnd = win.getNativeWindowHandle().readBigUInt64LE().toString();
-  spawn(exe, ['back', hwnd], { windowsHide: true }).on('error', (e) => console.warn('[spyder] back helper', e.message));
+  spawn(exe, [mode, hwnd], { windowsHide: true })
+    .on('error', (e) => console.warn(`[spyder] ${mode} helper`, e.message))
+    .on('exit', (code) => done?.(code));
 }
 
 /** The hotkey hides the bar when it's on top, and brings it back on top when it's hidden or behind (P83). */
@@ -257,4 +265,116 @@ export function openDashboard(ctx: AppCtx, route?: string): void {
   if (QUIET) return d.showInactive();
   d.show();
   d.focus();
+}
+
+// ---- The "How I'll improve" gadget (P107, ADR-0012) -------------------------------------------------
+
+/** The last `UrlHelper.exe desktop` exit code (0 = owned by the desktop), or null when it was skipped (e2e, no helper). */
+export let gadgetDesktop: number | null = null;
+let desktopTimer: NodeJS.Timeout | undefined;
+
+/** The saved bounds if they're still on a connected display, else 24 px in from the primary work area's top right. */
+export function gadgetBoundsFor(saved: { x: number; y: number; width: number; height: number } | null): Electron.Rectangle {
+  if (saved) {
+    const a = screen.getDisplayMatching(saved).workArea;
+    const cx = saved.x + saved.width / 2;
+    const inside = cx >= a.x && cx <= a.x + a.width && saved.y >= a.y && saved.y + 36 <= a.y + a.height;
+    if (inside) return saved;
+  }
+  const a = screen.getPrimaryDisplay().workArea;
+  return { ...GADGET_DEFAULT, x: a.x + a.width - GADGET_DEFAULT.width - 24, y: a.y + 24 };
+}
+
+/** Owned by the desktop and at the bottom: never over an app, still there on Win+D (ADR-0012). */
+function toDesktop(win: BrowserWindow): void {
+  if (QUIET) return;
+  helper(win, 'desktop', (code) => {
+    gadgetDesktop = code;
+  });
+}
+
+export function createGadget(ctx: AppCtx): BrowserWindow {
+  const win = new BrowserWindow({
+    ...gadgetBoundsFor(ctx.settings.gadgetBounds),
+    minWidth: GADGET_MIN.width,
+    minHeight: GADGET_MIN.height,
+    show: false,
+    frame: false,
+    // Glass like the prompt: Windows 11 acrylic behind the page's smoke tint.
+    backgroundColor: '#00000000',
+    backgroundMaterial: 'acrylic',
+    hasShadow: true,
+    resizable: true,
+    maximizable: false,
+    minimizable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    alwaysOnTop: false,
+    title: "How I'll improve",
+    webPreferences: webPreferences(),
+  });
+  let t: NodeJS.Timeout | undefined;
+  const remember = () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      if (win.isDestroyed()) return;
+      ctx.settings.gadgetBounds = win.getBounds();
+      saveSettings(ctx.db, { gadgetBounds: ctx.settings.gadgetBounds });
+    }, 500);
+  };
+  win.on('move', remember);
+  win.on('resize', remember);
+  win.once('ready-to-show', () => {
+    if (!ctx.settings.gadget || ctx.settings.gadgetHidden) return;
+    win.showInactive();
+    toDesktop(win);
+  });
+  // Clicking it doesn't raise it over apps; sending it back on focus and blur makes sure (ADR-0012).
+  win.on('focus', () => sendToBack(win));
+  win.on('blur', () => sendToBack(win));
+  win.on('show', () => {
+    clearInterval(desktopTimer);
+    desktopTimer = setInterval(() => toDesktop(win), 30_000); // e.g. Explorer restarted
+  });
+  win.on('hide', () => clearInterval(desktopTimer));
+  win.on('close', (e) => {
+    if (!ctx.quitting) {
+      e.preventDefault();
+      minimizeGadget(ctx);
+    }
+  });
+  win.on('closed', () => {
+    clearInterval(desktopTimer);
+    if (ctx.gadget === win) ctx.gadget = null;
+    if (!ctx.quitting) setTimeout(() => applyGadget(ctx), 1000); // Windows destroyed it (ADR-0012)
+  });
+  load(ctx, win, '/gadget');
+  return win;
+}
+
+/** Shown iff the setting is on and it wasn't minimized to the tray; created the first time it's needed. */
+export function applyGadget(ctx: AppCtx): void {
+  const show = ctx.settings.gadget && !ctx.settings.gadgetHidden;
+  const g = ctx.gadget && !ctx.gadget.isDestroyed() ? ctx.gadget : null;
+  if (!show) return void g?.hide();
+  if (!g) {
+    ctx.gadget = createGadget(ctx); // shows itself when ready
+    return;
+  }
+  if (!g.isVisible()) g.showInactive();
+  toDesktop(g);
+}
+
+/** The tray's Show How I'll improve. */
+export function showGadget(ctx: AppCtx): void {
+  ctx.settings.gadgetHidden = false;
+  saveSettings(ctx.db, { gadgetHidden: false });
+  applyGadget(ctx);
+}
+
+/** The gadget's minimize: to the tray, and it stays there across restarts. */
+export function minimizeGadget(ctx: AppCtx): void {
+  ctx.settings.gadgetHidden = true;
+  saveSettings(ctx.db, { gadgetHidden: true });
+  applyGadget(ctx);
 }

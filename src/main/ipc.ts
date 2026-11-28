@@ -14,13 +14,17 @@ import * as repo from './db/repo';
 import { exportRange } from './export';
 import type { EngineHost } from './engineHost';
 import { registerHotkey } from './hotkey';
+import { refreshTrayMenu } from './tray';
 import * as report from './report';
 import { dateKey } from '../core/schedule';
 import { loadSettings, saveSettings } from './settings';
 import { BlockEditor } from './blockEdit';
 import { applyStyle, applyTheme } from './theme';
 import { isAppUrl } from './paths';
-import { hideWidget, minimizeWidget, openDashboard, resizePrompt, showWidget } from './windows';
+import { applyGadget, hideWidget, minimizeGadget, minimizeWidget, openDashboard, resizePrompt, showWidget } from './windows';
+import * as gadget from './gadget';
+import { isLabelColor } from '../core/gadget';
+import type { GadgetRowPatch } from '../preload/api';
 
 const documentsDir = () => app.getPath('documents');
 const result = (err: EngineError | null) => err ?? { ok: true as const };
@@ -52,6 +56,10 @@ export function registerIpc(ctx: AppCtx, host: EngineHost, hooks: IpcHooks): voi
     if ('goalSec' in partial || 'appPercentScope' in partial) host.reloadRules();
     if (partial.blockLengthSec !== undefined) host.setLength(partial.blockLengthSec);
     if (partial.trackFromStartup && !host.state.loop) host.start(ctx.settings.blockLengthSec); // P76
+    if ('gadget' in partial) {
+      applyGadget(ctx); // P107
+      refreshTrayMenu(ctx);
+    }
     host.push();
     return { ...ctx.settings, hotkeyOk: ctx.hotkeyOk, dataDir: ctx.dataDir, today: dateKey(ctx.clock.now()) };
   });
@@ -155,6 +163,7 @@ export function registerIpc(ctx: AppCtx, host: EngineHost, hooks: IpcHooks): voi
   // P98: the midnight card follows what the review already has.
   h('saveReviewItem', (it: Parameters<typeof report.saveReviewItem>[1]) => {
     const r = report.saveReviewItem(ctx.db, it, ctx.clock.now());
+    if (r.kind === 'improve') gadget.autoAdd(ctx.db, r.date, [{ text: r.text, sort: r.sort }], ctx.clock.now()); // P107
     host.dataChanged();
     return r;
   });
@@ -166,6 +175,31 @@ export function registerIpc(ctx: AppCtx, host: EngineHost, hooks: IpcHooks): voi
   h('listKpis', () => report.listKpis(ctx.db));
   h('saveKpi', (k: Parameters<typeof report.saveKpi>[1]) => report.saveKpi(ctx.db, k));
   h('setKpiValue', (date: string, kpiId: string, value: number | null) => report.setKpiValue(ctx.db, date, kpiId, value));
+
+  // The How I'll improve gadget (P107)
+  const isDate = (d: unknown): d is string => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d);
+  const changed = <T>(v: T): T => {
+    host.gadgetChanged();
+    return v;
+  };
+  h('getGadget', () => host.gadget());
+  h('addGadgetRow', (text: string) => changed(typeof text === 'string' ? gadget.addRow(ctx.db, text, dateKey(ctx.clock.now()), ctx.clock.now()) : null));
+  h('editGadgetRow', (id: string, p: GadgetRowPatch) => {
+    if (typeof id !== 'string' || typeof p !== 'object' || p === null) return;
+    const patch: GadgetRowPatch = {};
+    if (typeof p.text === 'string') patch.text = p.text;
+    if (typeof p.ticked === 'boolean') patch.ticked = p.ticked;
+    if (p.color === null || isLabelColor(p.color)) patch.color = p.color;
+    if (typeof p.removed === 'boolean') patch.removed = p.removed;
+    changed(gadget.editRow(ctx.db, id, patch, ctx.clock.now()));
+  });
+  h('clearTicked', () => changed(gadget.clearTicked(ctx.db, ctx.clock.now())));
+  h('gadgetImportList', () => gadget.importList(ctx.db));
+  h('importGadgetRows', (items: { date: string; text: string; sort: number }[]) => {
+    const ok = Array.isArray(items) ? items.filter((it) => it && isDate(it.date) && typeof it.text === 'string' && Number.isInteger(it.sort)) : [];
+    return changed(gadget.importRows(ctx.db, ok, ctx.clock.now()));
+  });
+  h('minimizeGadget', () => minimizeGadget(ctx));
 
   // Windows
   h('hideWidget', () => hideWidget(ctx));

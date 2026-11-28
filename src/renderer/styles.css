@@ -59,6 +59,13 @@
   --color-app-6: #0ca30c;
   --color-app-7: #9085e9;
   --color-app-8: #e66767;
+  /* P107: the gadget's colour labels (DESIGN.md §2b). */
+  --color-label-red: #ef5c63;
+  --color-label-orange: #f2a33a;
+  --color-label-yellow: #e3c341;
+  --color-label-green: #3fb27f;
+  --color-label-blue: #4f97ef;
+  --color-label-purple: #a585f2;
 }
 
 /* Light theme (P57): follows Windows unless Settings picks one (nativeTheme.themeSource). */
@@ -99,6 +106,13 @@
     --color-app-7: #6250d6;
     --color-app-8: #e34948;
 
+    --color-label-red: #dc3a40;
+    --color-label-orange: #d9800f;
+    --color-label-yellow: #c49b00;
+    --color-label-green: #1f9d63;
+    --color-label-blue: #2a78d6;
+    --color-label-purple: #7a58e0;
+
     --shadow-float: 0 8px 24px rgba(16, 16, 24, 0.12), 0 0 0 1px rgba(16, 16, 24, 0.06);
     --shadow-pop: 0 4px 16px rgba(16, 16, 24, 0.1), 0 0 0 1px rgba(16, 16, 24, 0.05);
   }
@@ -129,10 +143,12 @@
   }
   /* Smoke tint over the acrylic (P89): the glass still shows through, but its colour is ours. Strength from Settings (P90). The prompt's frame too (P92). */
   body.dashboard,
-  body.prompt {
+  body.prompt,
+  body.gadget {
     background: color-mix(in srgb, var(--color-sidebar) var(--glass-tint, 55%), transparent);
   }
-  body.prompt {
+  body.prompt,
+  body.gadget {
     overflow: hidden;
   }
   body.transparent {
@@ -255,6 +271,28 @@
 .glass-btn:hover:enabled {
   background: color-mix(in srgb, var(--color-text) 16%, transparent);
   border-color: transparent;
+}
+
+/* P107: a gadget row's colour label: a soft tint and a 3 px edge in the full colour; half strength once ticked. */
+[data-color] {
+  --label: transparent;
+}
+[data-color='red'] { --label: var(--color-label-red); }
+[data-color='orange'] { --label: var(--color-label-orange); }
+[data-color='yellow'] { --label: var(--color-label-yellow); }
+[data-color='green'] { --label: var(--color-label-green); }
+[data-color='blue'] { --label: var(--color-label-blue); }
+[data-color='purple'] { --label: var(--color-label-purple); }
+.gadget-row:not([data-color='']) {
+  background: color-mix(in srgb, var(--label) 16%, transparent);
+  box-shadow: inset 3px 0 0 var(--label);
+}
+.gadget-row[data-ticked='true']:not([data-color='']) {
+  background: color-mix(in srgb, var(--label) 8%, transparent);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--label) 50%, transparent);
+}
+.gadget-row[data-color='']:hover {
+  background: color-mix(in srgb, var(--color-surface-2) 50%, transparent);
 }
 
 /* Motion (kept short; the timer digits never animate). */

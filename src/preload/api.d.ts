@@ -10,8 +10,23 @@ import type { AskRow } from '../core/asks';
 import type { ScheduleRow } from '../core/settings';
 import type { PatternMatch } from '../core/defaults';
 import type { RangeVM } from '../core/trends';
+import type { GadgetRow, ImportDay, LabelColor } from '../core/gadget';
 
-export type { AppRow, AskRow, DayVM, Kpi, RangeVM, ReviewItem, ReviewVM, ScheduleRow };
+export type { AppRow, AskRow, DayVM, GadgetRow, ImportDay, Kpi, LabelColor, RangeVM, ReviewItem, ReviewVM, ScheduleRow };
+
+/** P107: the gadget's rows in the order it shows them, and today (its date labels show the year only when it isn't today's). */
+export interface GadgetPayload {
+  rows: GadgetRow[];
+  today: string;
+}
+
+/** P107: a change to one gadget row; an empty text removes it, `removed: false` is the Undo. */
+export interface GadgetRowPatch {
+  text?: string;
+  ticked?: boolean;
+  color?: LabelColor | null;
+  removed?: boolean;
+}
 
 export interface RuleVM {
   id: string;
@@ -81,6 +96,8 @@ export interface DebugApi {
     browser: 'chrome' | 'firefox' | 'edge' | null;
   }): Promise<string>;
   trayInfo(): Promise<{ exists: boolean; tooltip: string; menu: string[] }>;
+  /** Clicks the tray menu item with this label; false when there's none. */
+  trayClick(label: string): Promise<boolean>;
   flush(): Promise<void>;
   killProbe(): Promise<void>;
   triggerHotkey(): Promise<void>;
@@ -152,6 +169,19 @@ export interface SpyderApi {
   listKpis(): Promise<Kpi[]>;
   saveKpi(k: { id?: string; name: string; unit?: string | null; archived?: boolean }): Promise<Kpi>;
   setKpiValue(date: string, kpiId: string, value: number | null): Promise<void>;
+
+  /** P107: the How I'll improve gadget. */
+  getGadget(): Promise<GadgetPayload>;
+  onGadget(cb: (g: GadgetPayload) => void): () => void;
+  /** A row written on the gadget, dated today; null when the text is empty. */
+  addGadgetRow(text: string): Promise<GadgetRow | null>;
+  editGadgetRow(id: string, patch: GadgetRowPatch): Promise<void>;
+  /** Removes every ticked row; returns their ids. */
+  clearTicked(): Promise<string[]>;
+  gadgetImportList(): Promise<ImportDay[]>;
+  /** Adds the picked improvements not on the gadget now; returns how many. */
+  importGadgetRows(items: { date: string; text: string; sort: number }[]): Promise<number>;
+  minimizeGadget(): Promise<void>;
 
   hideWidget(): Promise<void>;
   minimizeWidget(): Promise<void>;

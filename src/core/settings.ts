@@ -1,4 +1,6 @@
 // Settings keys and defaults (plan §5, P57, P59).
+import { GADGET_MIN } from './gadget';
+
 export interface Settings {
   goalSec: number;
   idleThresholdSec: number;
@@ -39,6 +41,12 @@ export interface Settings {
   askReflection: boolean;
   /** P105: which part of a stretch asleep or off becomes blocks: work hours only (P95) or the whole day. */
   asleepScope: 'work_hours' | 'all_day';
+  /** P107: the "How I'll improve" gadget on the desktop. */
+  gadget: boolean;
+  /** P107: the gadget was minimized to the tray. */
+  gadgetHidden: boolean;
+  /** P107: where the gadget was last, and its size; null = the default place. */
+  gadgetBounds: { x: number; y: number; width: number; height: number } | null;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -68,6 +76,9 @@ export const DEFAULT_SETTINGS: Settings = {
   accentColor: null,
   askReflection: true,
   asleepScope: 'work_hours',
+  gadget: true,
+  gadgetHidden: false,
+  gadgetBounds: null,
 };
 
 export interface ScheduleRow {
@@ -124,6 +135,12 @@ export function cleanSettings(partial: Record<string, unknown>): Partial<Setting
       if (ENUMS[key]!.includes(v)) out[k] = v;
     } else if (key === 'widgetPos') {
       if (v === null || (typeof v === 'object' && typeof (v as { x: unknown }).x === 'number' && typeof (v as { y: unknown }).y === 'number')) out[k] = v;
+    } else if (key === 'gadgetBounds') {
+      const b = v as Record<string, unknown> | null;
+      const fin = (n: unknown) => typeof n === 'number' && Number.isFinite(n);
+      if (b === null) out[k] = null;
+      else if (typeof b === 'object' && fin(b.x) && fin(b.y) && fin(b.width) && fin(b.height) && (b.width as number) >= GADGET_MIN.width && (b.height as number) >= GADGET_MIN.height)
+        out[k] = { x: Math.round(b.x as number), y: Math.round(b.y as number), width: Math.round(b.width as number), height: Math.round(b.height as number) };
     } else if (key === 'workColor' || key === 'gymColor' || key === 'foodColor' || key === 'sleepColor') {
       if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) out[k] = v.toLowerCase();
     } else if (key === 'accentColor') {

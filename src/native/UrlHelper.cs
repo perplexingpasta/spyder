@@ -4,6 +4,9 @@
 // One-shot mode (P71): `UrlHelper.exe focus <hwnd>` brings that window to the front with keyboard
 // focus, even while the user is typing in another app; exit code 0 when it worked.
 // One-shot mode (P83): `UrlHelper.exe back <hwnd>` puts that window behind every other window.
+// One-shot mode (P107, ADR-0012): `UrlHelper.exe desktop <hwnd>` makes Progman (the desktop) own that window,
+// so Win+D leaves it showing, then puts it behind every other window. Exit 0 when owned, 1 when not, 2 when
+// there is no Progman (it was only sent back).
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -25,6 +28,12 @@ static class UrlHelper
     static extern uint GetCurrentThreadId();
     [DllImport("user32.dll")]
     static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
+    [DllImport("user32.dll")]
+    static extern IntPtr FindWindow(string cls, string title);
+    [DllImport("user32.dll")]
+    static extern IntPtr GetWindow(IntPtr hwnd, uint cmd);
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
+    static extern IntPtr SetWindowLongPtr(IntPtr hwnd, int index, IntPtr value);
 
     static IntPtr cachedHwnd = IntPtr.Zero;
     static AutomationElement cachedEdit;
@@ -38,6 +47,7 @@ static class UrlHelper
     {
         if (args.Length == 2 && args[0] == "focus") return Focus(new IntPtr(long.Parse(args[1])));
         if (args.Length == 2 && args[0] == "back") return Back(new IntPtr(long.Parse(args[1])));
+        if (args.Length == 2 && args[0] == "desktop") return Desktop(new IntPtr(long.Parse(args[1])));
         var stdout = Console.Out;
         string line;
         while ((line = Console.ReadLine()) != null)
@@ -78,6 +88,16 @@ static class UrlHelper
     static int Back(IntPtr target)
     {
         return SetWindowPos(target, new IntPtr(1), 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0010) ? 0 : 1;
+    }
+
+    /** GWLP_HWNDPARENT on a top-level window sets its owner; GW_OWNER reads it back. */
+    static int Desktop(IntPtr target)
+    {
+        IntPtr progman = FindWindow("Progman", null);
+        if (progman == IntPtr.Zero) { Back(target); return 2; }
+        if (GetWindow(target, 4) != progman) SetWindowLongPtr(target, -8, progman);
+        Back(target);
+        return GetWindow(target, 4) == progman ? 0 : 1;
     }
 
     static string Foreground()
